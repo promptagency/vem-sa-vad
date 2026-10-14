@@ -81,9 +81,11 @@ npm run dev      # open http://localhost:5173
 - **Podcasts work in `npm run dev`**, which includes a stand-in for the podcast proxy;
   `npm run preview` doesn't.
 
-**To host it for others**, `npm run build` gives static files in `dist/` that can be served from any
-folder. [docs/hosting.md](docs/hosting.md) covers Cloudflare Pages (what the public site uses), Apache,
-the podcast proxy and the security headers.
+**To host it for others**, download the ready-built zip from the latest
+[release](https://github.com/promptagency/vem-sa-vad/releases/latest) and unzip it onto any web server
+over HTTPS, or build it yourself with `npm run build` (static files in `dist/`, servable from any folder).
+[docs/hosting.md](docs/hosting.md) covers Cloudflare Pages (what the public site uses), Apache, the
+podcast proxy and the security headers.
 
 ## Models
 

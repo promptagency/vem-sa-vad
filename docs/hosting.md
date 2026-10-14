@@ -26,11 +26,15 @@ merge (feature branches get preview addresses). Settings live in `wrangler.toml`
 
 ## Apache / LAMP
 
+Every [release](https://github.com/promptagency/vem-sa-vad/releases) has the built site attached as
+`vem-sa-vad-<version>.zip`: unzip it and copy the **contents of the `vem-sa-vad/` folder** into your
+Apache web root (or a subfolder). No Node.js needed. Or build it yourself:
+
 ```bash
 npm run build    # outputs static files to dist/
 ```
 
-Copy the **contents of `dist/`** into your Apache web root (or a subfolder). A ready-to-use
+and copy the **contents of `dist/`** instead. A ready-to-use
 **`.htaccess`** and the podcast **`proxy.php`** are included in `public/` and are emitted into `dist/`
 by the build.
 

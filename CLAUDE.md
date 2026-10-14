@@ -212,6 +212,17 @@ for errors and amber for unsure lines stay. Use these tokens rather than Tailwin
 - The README is for users first, then self-hosters and developers: features, privacy, getting started and
   short summaries. Technical detail goes in `docs/` (`hosting.md`, `speaker-separation.md`,
   `architecture.md`, `benchmark.md`, …), linked from the README.
+- **Releases:** bump `package.json` with `npm version <x.y.z> --no-git-tag-version`, merge that to `main`,
+  then tag `main` as `v<x.y.z>` and push the tag. `.github/workflows/release.yml` checks the tag matches
+  `package.json`, typechecks, builds, and publishes a GitHub Release with the site zipped
+  (`vem-sa-vad-v<x.y.z>.zip`, for self-hosters) and notes generated from merged PRs; an optional
+  `.github/release-notes/v<x.y.z>.md` becomes the introduction. The public site doesn't wait for releases —
+  it deploys from every merge to `main`.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs on Mondays: npm minor/patch updates grouped
+  into `app` and `dev-tooling`, majors one by one, GitHub Actions together. `@huggingface/transformers` and
+  `onnxruntime-*` come as their own `model-runtime` group: those need the `overrides` pin moved by hand and
+  a browser re-test (GPU, CPU, speaker separation) before merging. `.github/workflows/ci.yml` typechecks and
+  builds every PR (Dependabot's too) and every push to `main`; a red check means don't merge.
 - Parked work lives on branches: `feature/pianissimo` (Klang AI's Pianissimo model, WebGPU-only, self-hosted
   765 MB), `spike/pianissimo` (its benchmark harness and findings) and `spike/multi-speaker` (more than 3
   speakers: segmentation windows + WeSpeaker fingerprints + clustering; no gain on a labelled 4-speaker

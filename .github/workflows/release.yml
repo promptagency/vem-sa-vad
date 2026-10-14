@@ -1,0 +1,57 @@
+# Publishes a GitHub Release when a version tag (v1.2.3) is pushed: builds the
+# site and attaches it as a zip, ready to unzip onto any static web server
+# (see docs/hosting.md). The tag must match package.json's version.
+# Notes are generated from the merged PRs since the previous release, with
+# .github/release-notes/<tag>.md, if there is one, as an introduction.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # earlier tags, for the generated notes
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check the tag matches package.json
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Zip the built site
+        run: |
+          # One top-level folder, so unzipping doesn't scatter files.
+          mv dist vem-sa-vad
+          zip -qr "vem-sa-vad-$GITHUB_REF_NAME.zip" vem-sa-vad
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          intro=".github/release-notes/$GITHUB_REF_NAME.md"
+          notes=()
+          # --notes (not --notes-file) is what gh prepends to the generated notes.
+          if [ -f "$intro" ]; then notes=(--notes "$(cat "$intro")"); fi
+          gh release create "$GITHUB_REF_NAME" "vem-sa-vad-$GITHUB_REF_NAME.zip" \
+            --title "Vem sa vad? $GITHUB_REF_NAME" \
+            --generate-notes "${notes[@]}" \
+            --verify-tag
