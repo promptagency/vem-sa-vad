@@ -82,8 +82,9 @@ q4f16 decoder**, or fp32 encoder + q4 decoder when the GPU lacks `shader-f16` (`
 encoder at 4 bits: it measured fine on Swedish but dropped speech after a language switch. 16-bit on WebGPU
 needs transformers.js 4.x (3.x produced garbage). 8-bit decoders are CPU-only (~10× slower on WebGPU).
 Measurements: `docs/webgpu-quantization.md`. Transformers.js pins *development* builds of `onnxruntime-web`;
-`package.json` `overrides` forces the latest stable release instead — when upgrading Transformers.js, move
-the override to the stable ONNX Runtime closest to what it pins, and re-test GPU, CPU and speaker separation. A load is tried twice with the requested dtype before any fallback (fp32+q4 on the GPU, then WASM with a
+a stable release instead: `onnxruntime-web` is a direct dependency pinned to that version, and `overrides`
+(`"$onnxruntime-web"`) forces it everywhere — when upgrading Transformers.js, move the pin to the stable ONNX
+Runtime closest to what it pins, and re-test GPU, CPU and speaker separation. A load is tried twice with the requested dtype before any fallback (fp32+q4 on the GPU, then WASM with a
 CPU-safe dtype): first-attempt failures were seen only intermittently and never reproduced under
 instrumentation. First downloads can be slow because Hugging Face's CDN serves cold files slowly (verified);
 after 10 s without progress the loading panel says the server is slow.
@@ -212,6 +213,22 @@ for errors and amber for unsure lines stay. Use these tokens rather than Tailwin
 - The README is for users first, then self-hosters and developers: features, privacy, getting started and
   short summaries. Technical detail goes in `docs/` (`hosting.md`, `speaker-separation.md`,
   `architecture.md`, `benchmark.md`, …), linked from the README.
+- **Releases:** bump `package.json` with `npm version <x.y.z> --no-git-tag-version`, merge that to `main`,
+  then tag `main` as `v<x.y.z>` and push the tag. `.github/workflows/release.yml` refuses a tag that isn't on
+  `main` or doesn't match `package.json`, typechecks, builds (in a read-only job), and publishes a GitHub Release
+  (in a separate job that installs nothing) with the site zipped (`vem-sa-vad-v<x.y.z>.zip`, for self-hosters)
+  and notes generated from merged PRs; an optional `.github/release-notes/v<x.y.z>.md` becomes the
+  introduction. A tag with a suffix (`v1.1.0-rc.1`) becomes a pre-release, never "latest". The footer shows
+  `package.json`'s version (`__APP_VERSION__`, put in by `vite.config.ts`), linking to the releases list. The
+  live site deploys every merge, so it shows whatever `package.json` says: merge the version bump right before
+  tagging, and expect features merged since the last release to show under the old number until the next bump. The public site doesn't wait for releases —
+  it deploys from every merge to `main`.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs on Mondays: npm minor/patch updates grouped
+  into `app` and `dev-tooling`, majors one by one, GitHub Actions together. `@huggingface/transformers` and
+  `onnxruntime-*` come as their own `model-runtime` group: those need the `overrides` pin moved by hand and
+  a browser re-test (GPU, CPU, speaker separation) before merging. `.github/workflows/ci.yml` typechecks and
+  builds every PR (Dependabot's too) and every push to `main`. A green check only means it compiles and
+  bundles — it never runs a model, so a `model-runtime` PR is not ready until it's been tested in the browser.
 - Parked work lives on branches: `feature/pianissimo` (Klang AI's Pianissimo model, WebGPU-only, self-hosted
   765 MB), `spike/pianissimo` (its benchmark harness and findings) and `spike/multi-speaker` (more than 3
   speakers: segmentation windows + WeSpeaker fingerprints + clustering; no gain on a labelled 4-speaker

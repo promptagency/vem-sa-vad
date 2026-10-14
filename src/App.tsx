@@ -961,6 +961,22 @@ export default function App() {
             pyannote
           </a>
         </p>
+        {/*
+          Discreet: the version, linking to the list of releases — not to this
+          version's page, which only exists once its tag has been pushed, while
+          main deploys on every merge. The visible "v1.0.0" stays the link's name.
+        */}
+        <p className="mt-3">
+          <a
+            href="https://github.com/promptagency/vem-sa-vad/releases"
+            title={t.footer.version(__APP_VERSION__)}
+            className="text-[11px] tabular-nums text-neutral-500 underline-offset-2 hover:text-neutral-300 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            v{__APP_VERSION__}
+          </a>
+        </p>
       </footer>
 
       <GlossaryDialog

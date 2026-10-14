@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig, type PluginOption } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -59,8 +60,13 @@ function dropUnusedOrtWasm(): PluginOption {
 
 // Relative base ('./') so the static build can be dropped into ANY folder on the
 // Apache/LAMP web root (root or a subfolder) without rewriting asset URLs.
+// The version shown in the footer: package.json's, which a release tag must match.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+if (typeof version !== 'string' || !version) throw new Error('package.json has no version')
+
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [react(), tailwindcss(), devPodcastProxy(), dropUnusedOrtWasm()],
   worker: {
     format: 'es',

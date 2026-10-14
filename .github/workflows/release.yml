@@ -1,0 +1,88 @@
+# Publishes a GitHub Release when a version tag (v1.2.3, or v1.2.3-rc.1 as a
+# pre-release) is pushed on a commit in main: builds the site and attaches it
+# as a zip for self-hosters (see docs/hosting.md). The tag must match
+# package.json's version. Notes are generated from the merged PRs since the
+# previous release, with .github/release-notes/<tag>.md, if there is one, as an
+# introduction.
+#
+# Two jobs, so the token that can write to the repo never shares a machine with
+# `npm ci`'s third-party install scripts: `build` only reads, `publish` installs
+# nothing. Actions are pinned to commits; Dependabot keeps the pins current.
+# Keep upload-artifact and download-artifact on matching majors.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # to check the tag is on main
+          persist-credentials: false
+
+      - name: Check the tag is on main and matches package.json
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME is not on main — merge first, then tag main"
+            exit 1
+          fi
+          version="$(node -p 'require("./package.json").version')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Zip the built site
+        run: |
+          # One top-level folder, so unzipping doesn't scatter files.
+          mv dist vem-sa-vad
+          zip -qr "vem-sa-vad-$GITHUB_REF_NAME.zip" vem-sa-vad
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: site
+          path: vem-sa-vad-${{ github.ref_name }}.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false # only for the release-notes file
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: site
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=(--title "Vem sa vad? $GITHUB_REF_NAME" --generate-notes --verify-tag)
+          intro=".github/release-notes/$GITHUB_REF_NAME.md"
+          if [ -f "$intro" ]; then args+=(--notes-file "$intro"); fi
+          # v1.2.3-rc.1 and the like: a pre-release, never "latest".
+          case "$GITHUB_REF_NAME" in *-*) args+=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" "vem-sa-vad-$GITHUB_REF_NAME.zip" "${args[@]}"
