@@ -14,10 +14,12 @@ updates:
       prefix: deps
     groups:
       # The model runtime first (a package joins the first group it matches).
-      # Transformers.js pins development builds of onnxruntime-web, which
-      # package.json's `overrides` replaces with a stable release; Dependabot
-      # doesn't touch overrides, so an upgrade here also means moving the
-      # override by hand and re-testing GPU, CPU and speaker separation (CLAUDE.md).
+      # Transformers.js pins development builds of onnxruntime-web; package.json
+      # lists a stable onnxruntime-web as a direct dependency and its
+      # `overrides` entry ("$onnxruntime-web") forces that version everywhere,
+      # so Dependabot can see and bump it. CI can't tell whether models still
+      # run: these PRs need a browser test on GPU, CPU and speaker separation
+      # before merging (CLAUDE.md).
       model-runtime:
         patterns:
           - "@huggingface/transformers"

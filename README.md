@@ -82,8 +82,8 @@ npm run dev      # open http://localhost:5173
   `npm run preview` doesn't.
 
 **To host it for others**, download the ready-built zip from the latest
-[release](https://github.com/promptagency/vem-sa-vad/releases/latest) and unzip it onto any web server
-over HTTPS, or build it yourself with `npm run build` (static files in `dist/`, servable from any folder).
+[release](https://github.com/promptagency/vem-sa-vad/releases/latest) and unzip it onto a web server
+over HTTPS — Apache with PHP works out of the box — or build it yourself with `npm run build` (static files in `dist/`, servable from any folder).
 [docs/hosting.md](docs/hosting.md) covers Cloudflare Pages (what the public site uses), Apache, the
 podcast proxy and the security headers.
 
