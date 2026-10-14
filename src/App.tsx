@@ -961,6 +961,19 @@ export default function App() {
             pyannote
           </a>
         </p>
+        {/* Discreet: the version, linking to its release notes. */}
+        <p className="mt-3">
+          <a
+            href={`https://github.com/promptagency/vem-sa-vad/releases/tag/v${__APP_VERSION__}`}
+            title={t.footer.version(__APP_VERSION__)}
+            aria-label={t.footer.version(__APP_VERSION__)}
+            className="text-[11px] tabular-nums text-neutral-500 underline-offset-2 hover:text-neutral-300 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            v{__APP_VERSION__}
+          </a>
+        </p>
       </footer>
 
       <GlossaryDialog
