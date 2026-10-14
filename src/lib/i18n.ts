@@ -248,7 +248,7 @@ const sv = {
     basedOn: "Bygger på",
     byAuthor: "av",
     poweredBy: "Drivs av",
-    version: (v: string) => `Vad är nytt i version ${v}`,
+    version: (v: string) => `Version ${v} – se vad som är nytt`,
   },
   dropzone: {
     drop: "Släpp ljud eller video här",
@@ -655,7 +655,7 @@ const en: Strings = {
     basedOn: "Based on",
     byAuthor: "by",
     poweredBy: "Powered by",
-    version: (v) => `What’s new in version ${v}`,
+    version: (v) => `Version ${v} – see what’s new`,
   },
   dropzone: {
     drop: "Drop audio or video here",

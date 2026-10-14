@@ -62,6 +62,7 @@ function dropUnusedOrtWasm(): PluginOption {
 // Apache/LAMP web root (root or a subfolder) without rewriting asset URLs.
 // The version shown in the footer: package.json's, which a release tag must match.
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+if (typeof version !== 'string' || !version) throw new Error('package.json has no version')
 
 export default defineConfig({
   base: './',

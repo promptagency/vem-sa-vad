@@ -219,8 +219,9 @@ for errors and amber for unsure lines stay. Use these tokens rather than Tailwin
   (in a separate job that installs nothing) with the site zipped (`vem-sa-vad-v<x.y.z>.zip`, for self-hosters)
   and notes generated from merged PRs; an optional `.github/release-notes/v<x.y.z>.md` becomes the
   introduction. A tag with a suffix (`v1.1.0-rc.1`) becomes a pre-release, never "latest". The footer shows
-  `package.json`'s version (`__APP_VERSION__`, put in by `vite.config.ts`), linking to that release — so between
-  releases the live site shows the last released version. The public site doesn't wait for releases —
+  `package.json`'s version (`__APP_VERSION__`, put in by `vite.config.ts`), linking to the releases list. The
+  live site deploys every merge, so it shows whatever `package.json` says: merge the version bump right before
+  tagging, and expect features merged since the last release to show under the old number until the next bump. The public site doesn't wait for releases —
   it deploys from every merge to `main`.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly PRs on Mondays: npm minor/patch updates grouped
   into `app` and `dev-tooling`, majors one by one, GitHub Actions together. `@huggingface/transformers` and
