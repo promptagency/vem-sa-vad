@@ -345,6 +345,8 @@ export function JobQueue({
                       )}
                     </button>
                   </div>
+                  {/* Memoised: keep these props stable (no inline functions), or every
+                      progress tick re-renders every open transcript. */}
                   <TranscriptReview
                     job={job}
                     onEdit={onEditChunk}

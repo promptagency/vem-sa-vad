@@ -241,8 +241,10 @@ interface Span {
   key: string;
 }
 
+type InLine = Omit<Suggestion, "index">;
+
 /** Suggestions in one line of text. */
-function suggestIn(text: string, index: number, terms: Prepared[], maxWords: number): Suggestion[] {
+function suggestIn(text: string, terms: Prepared[], maxWords: number): InLine[] {
   const words = [...text.matchAll(WORD)].map((m) => ({ start: m.index!, end: m.index! + m[0].length }));
   // Each stretch of words is spelled out once, not once per term.
   const spans = new Map<string, Span>();
@@ -264,7 +266,7 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
     }
     return found;
   };
-  const out: Suggestion[] = [];
+  const out: InLine[] = [];
   for (let i = 0; i < words.length; ) {
     let best: { term: Prepared; length: number; score: number } | null = null;
     let already = 0; // words at i that already spell a term exactly
@@ -297,7 +299,7 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
       i += already;
     } else if (best) {
       const { start, end, raw } = span(i, best.length);
-      out.push({ index, start, end, found: raw, term: best.term.term });
+      out.push({ start, end, found: raw, term: best.term.term });
       i += best.length;
     } else {
       i++;
@@ -307,24 +309,31 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
 }
 
 /**
- * Every suggestion in the transcript, line by line and left to right. Pass the
- * same `cache` for as long as `terms` stay the same, and only lines whose text
- * changed are searched again: on a long transcript with a long list, searching
- * every line takes seconds.
+ * Per word list (the same array, as long as it is unchanged): its prepared
+ * terms and every line text already searched with it. Searching every line of
+ * a long transcript against a long list takes seconds; with this, an edit or a
+ * reopened transcript only searches lines it hasn't seen.
  */
-export function findSuggestions(
-  chunks: TranscriptChunk[],
-  terms: string[],
-  cache = new Map<string, Suggestion[]>(),
-): Suggestion[] {
-  const prepared = prepare(terms);
+const searched = new WeakMap<
+  string[],
+  { prepared: Prepared[]; maxWords: number; lines: Map<string, InLine[]> }
+>();
+
+/** Every suggestion in the transcript, line by line and left to right. */
+export function findSuggestions(chunks: TranscriptChunk[], terms: string[]): Suggestion[] {
+  let list = searched.get(terms);
+  if (!list) {
+    const prepared = prepare(terms);
+    list = { prepared, maxWords: Math.max(0, ...prepared.map((p) => p.words)) + 1, lines: new Map() };
+    searched.set(terms, list);
+  }
+  const { prepared, maxWords, lines } = list;
   if (prepared.length === 0) return [];
-  const maxWords = Math.max(...prepared.map((p) => p.words)) + 1;
   return chunks.flatMap((chunk, index) => {
-    let found = cache.get(chunk.text);
+    let found = lines.get(chunk.text);
     if (!found) {
-      found = suggestIn(chunk.text, 0, prepared, maxWords);
-      cache.set(chunk.text, found);
+      found = suggestIn(chunk.text, prepared, maxWords);
+      lines.set(chunk.text, found);
     }
     return found.map((s) => ({ ...s, index }));
   });
