@@ -45,16 +45,9 @@ export function safeFileName(name: string): string {
   const cleaned = name
     .replace(/[/\\:*?"<>|]+/g, "-")
     .replace(/[\u0000-\u001f]/g, "")
-    .replace(/^\.+/, "")
-    .trim();
+    // No leading dot (a hidden file) or trailing one (".." before the extension).
+    .replace(/^[\s.]+|[\s.]+$/g, "");
   return cleaned || "transcript";
-}
-
-/** Replace a filename's extension (or append one if absent). */
-export function withExtension(name: string, ext: string): string {
-  const dot = name.lastIndexOf(".");
-  const base = dot > 0 ? name.slice(0, dot) : name;
-  return `${base}.${ext}`;
 }
 
 function pad(n: number, width = 2): string {

@@ -60,7 +60,6 @@ import {
   type ExportFormat,
   extFor,
   render,
-  withExtension,
   safeFileName,
   downloadText,
   downloadBlob,
@@ -379,17 +378,19 @@ export default function App() {
       documentTimestamps: boolean,
     ) => {
       if (formats.length === 0) return;
-      // A file's label is its filename; the document heading reads better without ".wav".
-      const title = job.source === "file" ? job.label.replace(/\.[^.\s]{1,5}$/, "") : job.label;
+      // A file's label and name carry its extension (".wav"); podcast and recording
+      // names don't, and their dots ("Ep. 3") are part of the title.
+      const noExt = (name: string) => (job.source === "file" ? name.replace(/\.[^.\s]{1,5}$/, "") : name);
+      const title = noExt(job.label);
       const document = { title, timestamps: documentTimestamps };
       // Podcast names are built from episode titles, which routinely contain
       // slashes ("3/12 recap"). A browser strips those from a download name,
       // but inside a ZIP a slash is a path separator and would nest the files.
-      const base = safeFileName(job.downloadName);
+      const base = safeFileName(noExt(job.downloadName));
       if (formats.length === 1) {
         const format = formats[0];
         downloadText(
-          withExtension(base, extFor(format)),
+          `${base}.${extFor(format)}`,
           render(result, format, job.speakerNames, document, t.export),
           format,
         );
@@ -397,11 +398,11 @@ export default function App() {
       }
       const zip = createZip(
         formats.map((format) => ({
-          name: withExtension(base, extFor(format)),
+          name: `${base}.${extFor(format)}`,
           text: render(result, format, job.speakerNames, document, t.export),
         })),
       );
-      downloadBlob(withExtension(base, "zip"), zip);
+      downloadBlob(`${base}.zip`, zip);
     },
     [t],
   );
