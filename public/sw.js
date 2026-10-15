@@ -39,10 +39,11 @@ async function precache() {
       /* offline, a missing file or full storage: skip it */
     }
   }
-  // Content-hashed files from earlier releases are never asked for again.
+  // Content-hashed files from earlier releases are never asked for again, nor
+  // are the copies of the page that older versions kept per link (?fbclid=…).
   for (const request of await cache.keys()) {
     const url = new URL(request.url);
-    if (url.pathname.includes("/assets/") && !seen.has(url.toString())) await cache.delete(request);
+    if (url.search || (url.pathname.includes("/assets/") && !seen.has(url.toString()))) await cache.delete(request);
   }
 }
 
@@ -67,7 +68,10 @@ self.addEventListener("activate", (event) => {
 async function fetchAndKeep(event, cache, request) {
   const response = await fetch(request);
   if (response.ok && response.type === "basic") {
-    event.waitUntil(cache.put(request, response.clone()).catch(() => {}));
+    // The app is one page: keep one copy of it, not one per link it was opened
+    // from (?fbclid=…, utm tags, or any path the host answers with the app).
+    const key = request.mode === "navigate" ? "./" : request;
+    event.waitUntil(cache.put(key, response.clone()).catch(() => {}));
   }
   return response;
 }
@@ -90,10 +94,7 @@ self.addEventListener("fetch", (event) => {
       try {
         return await fetchAndKeep(event, cache, request);
       } catch {
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        if (request.mode === "navigate") return (await cache.match("./")) ?? Response.error();
-        return Response.error();
+        return (await cache.match(request.mode === "navigate" ? "./" : request)) ?? Response.error();
       }
     }),
   );
