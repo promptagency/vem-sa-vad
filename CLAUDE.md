@@ -151,7 +151,8 @@ silently block bursts of downloads.
 
 **Podcasts (`src/lib/podcasts.ts`).** iTunes Search API (CORS-enabled) to find shows; RSS and audio are
 fetched directly and fall back to the same-origin `public/proxy.php` (PHP + cURL, basic SSRF guard). In dev,
-the `devPodcastProxy` plugin in `vite.config.ts` serves `/proxy.php` (`apply: 'serve'`, so not in preview).
+the `devPodcastProxy` plugin in `vite.config.ts` serves `/proxy.php` by running `functions/proxy.php.ts`
+itself, so dev has the hosted proxy's rules (`apply: 'serve'`, so not in preview).
 
 **Deployment.** Public site: Cloudflare Pages (`wrangler.toml`), deployed from `main`, custom domain
 `vemsavad.promptagency.se` (CNAME at Loopia → the `pages.dev` address). `public/_headers` sets COOP/COEP and a
