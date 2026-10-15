@@ -132,7 +132,7 @@ export function Recorder({
   }
 
   async function start() {
-    if (startingRef.current) return;
+    if (startingRef.current || recorderRef.current) return;
     setError(null);
     const theme = getComputedStyle(document.documentElement);
     colorsRef.current = [
