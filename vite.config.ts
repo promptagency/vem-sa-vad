@@ -1,41 +1,36 @@
 import { readFileSync } from 'node:fs'
+import { Readable } from 'node:stream'
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web'
 import { defineConfig, type PluginOption } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// Dev-only stand-in for the production proxy.php: lets the podcast feature
-// fetch cross-origin RSS/audio while developing locally. In production the real
-// proxy.php (PHP + cURL) serves the same `./proxy.php?url=` endpoint.
+// Dev-only: serves `/proxy.php` with the hosted proxy itself (functions/proxy.php.ts),
+// so `npm run dev` gets exactly its rules — same-origin callers, no private hosts,
+// redirects checked per hop, feeds and media only, inert content types.
 function devPodcastProxy(): PluginOption {
   return {
     name: 'dev-podcast-proxy',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         if (!req.url || !req.url.startsWith('/proxy.php')) return next()
-        const target = new URL(req.url, 'http://localhost').searchParams.get('url')
-        if (!target) {
-          res.statusCode = 400
-          res.end('Missing url parameter')
-          return
+        try {
+          // Loaded through Vite, not imported: the file is typed for Cloudflare, not Node.
+          const { onRequestGet } = await server.ssrLoadModule('/functions/proxy.php.ts')
+          const site = req.headers['sec-fetch-site']
+          const request = new Request(new URL(req.url, 'http://localhost'), {
+            headers: typeof site === 'string' ? { 'Sec-Fetch-Site': site } : {},
+          })
+          const response: Response = await onRequestGet({ request })
+          res.statusCode = response.status
+          response.headers.forEach((value, key) => res.setHeader(key, value))
+          if (response.body) Readable.fromWeb(response.body as NodeReadableStream).pipe(res)
+          else res.end()
+        } catch (err) {
+          res.statusCode = 502
+          res.end('Dev proxy error: ' + ((err as Error)?.message ?? String(err)))
         }
-        fetch(target, {
-          redirect: 'follow',
-          headers: { Accept: '*/*', 'User-Agent': 'WhisperBrowser-dev-proxy/1.0' },
-        })
-          .then(async (upstream) => {
-            res.statusCode = upstream.status
-            const ct = upstream.headers.get('content-type')
-            if (ct) res.setHeader('Content-Type', ct)
-            res.setHeader('Access-Control-Allow-Origin', '*')
-            res.setHeader('X-Vem-Sa-Vad-Proxy', '1')
-            const buf = Buffer.from(await upstream.arrayBuffer())
-            res.end(buf)
-          })
-          .catch((err) => {
-            res.statusCode = 502
-            res.end('Dev proxy error: ' + (err?.message ?? String(err)))
-          })
       })
     },
   }
