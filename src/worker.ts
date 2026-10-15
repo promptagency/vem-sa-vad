@@ -475,9 +475,25 @@ async function ensurePipeline(
   throw err;
 }
 
-self.addEventListener("message", async (event: MessageEvent<ToWorker>) => {
+// One message at a time: a load waits for the running job instead of disposing
+// the pipeline under it, and the next job then waits for the new model.
+let queue = Promise.resolve();
+self.addEventListener("message", (event: MessageEvent<ToWorker>) => {
   const msg = event.data;
+  // A throw that escaped the handler must still settle the page's promise, or
+  // the queue would wait on this job forever.
+  queue = queue
+    .then(() => handle(msg))
+    .catch((err) =>
+      post({
+        type: "error",
+        jobId: "jobId" in msg ? msg.jobId : undefined,
+        message: String((err as Error)?.message ?? err),
+      }),
+    );
+});
 
+async function handle(msg: ToWorker): Promise<void> {
   if (msg.type === "load") {
     try {
       await ensurePipeline(msg.modelId, msg.dtype, msg.device);
@@ -624,4 +640,4 @@ self.addEventListener("message", async (event: MessageEvent<ToWorker>) => {
     });
     return;
   }
-});
+}

@@ -60,7 +60,6 @@ import {
   type ExportFormat,
   extFor,
   render,
-  withExtension,
   safeFileName,
   downloadText,
   downloadBlob,
@@ -379,17 +378,19 @@ export default function App() {
       documentTimestamps: boolean,
     ) => {
       if (formats.length === 0) return;
-      // A file's label is its filename; the document heading reads better without ".wav".
-      const title = job.source === "file" ? job.label.replace(/\.[^.\s]{1,5}$/, "") : job.label;
+      // A file's label and name carry its extension (".wav"); podcast and recording
+      // names don't, and their dots ("Ep. 3") are part of the title.
+      const noExt = (name: string) => (job.source === "file" ? name.replace(/\.[^.\s]{1,5}$/, "") : name);
+      const title = noExt(job.label);
       const document = { title, timestamps: documentTimestamps };
       // Podcast names are built from episode titles, which routinely contain
       // slashes ("3/12 recap"). A browser strips those from a download name,
       // but inside a ZIP a slash is a path separator and would nest the files.
-      const base = safeFileName(job.downloadName);
+      const base = safeFileName(noExt(job.downloadName));
       if (formats.length === 1) {
         const format = formats[0];
         downloadText(
-          withExtension(base, extFor(format)),
+          `${base}.${extFor(format)}`,
           render(result, format, job.speakerNames, document, t.export),
           format,
         );
@@ -397,11 +398,11 @@ export default function App() {
       }
       const zip = createZip(
         formats.map((format) => ({
-          name: withExtension(base, extFor(format)),
+          name: `${base}.${extFor(format)}`,
           text: render(result, format, job.speakerNames, document, t.export),
         })),
       );
-      downloadBlob(withExtension(base, "zip"), zip);
+      downloadBlob(`${base}.zip`, zip);
     },
     [t],
   );
@@ -514,19 +515,26 @@ export default function App() {
     ],
   );
 
+  // The loop outlives renders, so it reads the latest settings through refs: a
+  // setting changed mid-queue applies from the next job, and a new model choice
+  // stops the loop so the model reloads between jobs rather than under one.
+  const runJobRef = useRef(runJob);
+  runJobRef.current = runJob;
+  const loadedRef = useRef(loadedForModel);
+  loadedRef.current = loadedForModel;
   const drain = useCallback(async () => {
-    if (drainingRef.current || !loadedForModel) return;
+    if (drainingRef.current || !loadedRef.current) return;
     drainingRef.current = true;
     try {
       for (;;) {
         const next = jobsRef.current.find((j) => j.status === "queued");
-        if (!next) break;
-        await runJob(next);
+        if (!next || !loadedRef.current) break;
+        await runJobRef.current(next);
       }
     } finally {
       drainingRef.current = false;
     }
-  }, [loadedForModel, runJob]);
+  }, []);
 
   useEffect(() => {
     void drain();
@@ -548,7 +556,7 @@ export default function App() {
 
   useEffect(() => {
     const hasQueued = jobs.some((j) => j.status === "queued");
-    if (!hasQueued) return;
+    if (!hasQueued || jobs.some((j) => ACTIVE_STATUSES.includes(j.status))) return;
     if (state.status === "loading" || state.status === "error") return;
     if (loadedForModel) return;
     handleLoad();
@@ -787,7 +795,7 @@ export default function App() {
 
       {/* Optional: pre-load the model when idle — right under the drop area, so the
           settings panel can open directly beneath its own button. */}
-      {!loadedForModel && state.status !== "loading" && (
+      {!loadedForModel && state.status !== "loading" && !activeJob && (
         <button
           type="button"
           onClick={handleLoad}
@@ -839,7 +847,7 @@ export default function App() {
             storageRefreshKey={`${state.status}|${state.storageVersion}|${processed}`}
             onOpenGlossary={openGlossary}
           />
-          {state.status === "ready" && !loadedForModel && (
+          {state.status === "ready" && !loadedForModel && !activeJob && (
             <button
               type="button"
               onClick={handleLoad}

@@ -43,7 +43,8 @@ quoted in the README and `docs/speaker-separation.md` (e.g. 95.6% word accuracy)
 **Main thread ↔ worker.** All model work happens in one module Web Worker (`src/worker.ts`). The message
 contract is `ToWorker`/`FromWorker` in `src/lib/protocol.ts`; `src/hooks/useWhisper.ts` turns it into
 promises keyed by `jobId` (`loadModel`, `transcribe`, `diarize`). If the worker dies, every pending promise is
-rejected so the queue can't hang.
+rejected so the queue can't hang. The worker handles one message at a time, so a `load` waits for a running job instead of
+disposing its pipeline; the queue loop also stops when the chosen model changes and the model reloads between jobs.
 
 **Job queue (`src/App.tsx` + `src/lib/jobs.ts`).** Files, mic recordings and podcast episodes all become
 `Job`s with a lazy `getAudio()`. A single `drain()` loop runs one job at a time through
