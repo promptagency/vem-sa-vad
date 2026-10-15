@@ -126,11 +126,36 @@ async function peek(body: ReadableStream<Uint8Array>) {
   return { head, stream, cancel: () => reader.cancel() };
 }
 
-export const onRequestGet: PagesFunction = async ({ request }) => {
+interface Env {
+  /** The rate limiter in workers/limiter; absent under `npm run dev`. */
+  LIMITER?: Fetcher;
+}
+
+/**
+ * Whether this visitor is under the limit. Requests go through when there is
+ * no limiter (dev, or a deploy before the Worker exists) or it fails: podcasts
+ * shouldn't break because the limiter did.
+ */
+async function allowed(request: Request, env: Env | undefined): Promise<boolean> {
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (!env?.LIMITER || !ip) return true;
+  try {
+    const res = await env.LIMITER.fetch(`https://limiter/?key=${encodeURIComponent(ip)}`);
+    return res.status !== 429;
+  } catch {
+    return true;
+  }
+}
+
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Browsers say where a request comes from; only this site's pages may use it.
   const site = request.headers.get("Sec-Fetch-Site");
   if (site && site !== "same-origin") {
     return refuse(403, "This proxy only serves the Vem sa vad? app itself.");
+  }
+  // Scripts can leave that header out, so each visitor also gets a limited rate.
+  if (!(await allowed(request, env))) {
+    return refuse(429, "Too many requests through this proxy; try again in a minute.");
   }
 
   const target = new URL(request.url).searchParams.get("url");

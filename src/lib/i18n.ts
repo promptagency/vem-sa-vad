@@ -414,6 +414,7 @@ const sv = {
             ? `proxyn svarade HTTP ${p.detail}`
             : `proxyn gick inte att nå (${p.detail})`
       }, och servern tillåter inte direkt åtkomst. Kör \`npm run dev\`, eller lägg proxy.php (PHP + cURL) bredvid appen.`,
+    podcastBusy: () => "För många poddhämtningar på kort tid. Vänta en minut och försök igen.",
     searchHttp: (p: { status: number }) => `Poddsökningen misslyckades (HTTP ${p.status}).`,
     badFeed: () => "Flödet är inte giltig RSS/XML.",
     workerCrashed: () => "Transkriberingen stannade oväntat.",
@@ -819,6 +820,7 @@ const en: Strings = {
             ? `the proxy answered HTTP ${p.detail}`
             : `the proxy couldn't be reached (${p.detail})`
       }, and the host doesn't allow direct access. Run \`npm run dev\`, or deploy proxy.php (PHP + cURL) next to the app.`,
+    podcastBusy: () => "Too many podcast requests in a short time. Wait a minute and try again.",
     searchHttp: (p) => `Podcast search failed (HTTP ${p.status}).`,
     badFeed: () => "This feed isn't valid RSS/XML.",
     workerCrashed: () => "The transcription worker stopped unexpectedly.",

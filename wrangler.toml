@@ -4,3 +4,9 @@
 name = "vem-sa-vad"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-10-08"
+
+# Per-visitor limit on /proxy.php, kept by the Worker in workers/limiter (deploy
+# that first). The proxy lets requests through when the binding isn't there.
+[[services]]
+binding = "LIMITER"
+service = "vem-sa-vad-limiter"
