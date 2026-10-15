@@ -58,8 +58,18 @@ export function Recorder({
   // canvas can't use CSS variables directly.
   const colorsRef = useRef<[string, string]>(["#c85a3e", "#e59a7e"]);
 
+  // Set while the microphone permission prompt may be open: a second click must
+  // not start a second recording, and a recorder that has gone away must not
+  // leave a microphone on that nothing can stop.
+  const startingRef = useRef(false);
+  const unmountedRef = useRef(false);
+
   useEffect(() => {
-    return () => stopEverything();
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      stopEverything();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -122,6 +132,7 @@ export function Recorder({
   }
 
   async function start() {
+    if (startingRef.current || recorderRef.current) return;
     setError(null);
     const theme = getComputedStyle(document.documentElement);
     colorsRef.current = [
@@ -132,8 +143,13 @@ export function Recorder({
       setError(() => (t: Strings) => t.recorder.insecure);
       return;
     }
+    startingRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (unmountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
 
       // Set up live analysis (does NOT route to speakers → no echo).
@@ -171,6 +187,8 @@ export function Recorder({
       const detail = String((e as Error)?.message ?? e);
       setError(() => (t: Strings) => (denied ? t.recorder.denied : t.recorder.failed(detail)));
       stopEverything();
+    } finally {
+      startingRef.current = false;
     }
   }
 
