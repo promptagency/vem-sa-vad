@@ -306,12 +306,28 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
   return out;
 }
 
-/** Every suggestion in the transcript, line by line and left to right. */
-export function findSuggestions(chunks: TranscriptChunk[], terms: string[]): Suggestion[] {
+/**
+ * Every suggestion in the transcript, line by line and left to right. Pass the
+ * same `cache` for as long as `terms` stay the same, and only lines whose text
+ * changed are searched again: on a long transcript with a long list, searching
+ * every line takes seconds.
+ */
+export function findSuggestions(
+  chunks: TranscriptChunk[],
+  terms: string[],
+  cache = new Map<string, Suggestion[]>(),
+): Suggestion[] {
   const prepared = prepare(terms);
   if (prepared.length === 0) return [];
   const maxWords = Math.max(...prepared.map((p) => p.words)) + 1;
-  return chunks.flatMap((chunk, index) => suggestIn(chunk.text, index, prepared, maxWords));
+  return chunks.flatMap((chunk, index) => {
+    let found = cache.get(chunk.text);
+    if (!found) {
+      found = suggestIn(chunk.text, 0, prepared, maxWords);
+      cache.set(chunk.text, found);
+    }
+    return found.map((s) => ({ ...s, index }));
+  });
 }
 
 /**

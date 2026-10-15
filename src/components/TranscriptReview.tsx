@@ -161,15 +161,19 @@ export function TranscriptReview({
   // hand, recomputes them, so what's done disappears from the list.
   const [onlySuggestions, setOnlySuggestions] = useState(false);
   const [ignored, setIgnored] = useState<Set<string>>(() => new Set());
+  // Lines already searched with this word list, by their text.
+  const searched = useMemo(() => new Map<string, Suggestion[]>(), [glossary]);
   const suggestions = useMemo(
-    () => (glossary.length ? findSuggestions(chunks, glossary) : []),
-    [chunks, glossary],
+    () => (glossary.length ? findSuggestions(chunks, glossary, searched) : []),
+    [chunks, glossary, searched],
   ).filter((s) => !ignored.has(groupKey(s)));
   // The same misheard words → the same term, in order of first appearance.
   const groups: Suggestion[][] = [];
+  const byLine = new Map<number, Suggestion[]>();
   {
     const byKey = new Map<string, Suggestion[]>();
     for (const s of suggestions) {
+      byLine.set(s.index, [...(byLine.get(s.index) ?? []), s]);
       const key = groupKey(s);
       const group = byKey.get(key);
       if (group) group.push(s);
@@ -180,7 +184,7 @@ export function TranscriptReview({
       }
     }
   }
-  const suggestionsIn = (index: number) => suggestions.filter((s) => s.index === index);
+  const suggestionsIn = (index: number) => byLine.get(index) ?? [];
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAt = useRef(0);
