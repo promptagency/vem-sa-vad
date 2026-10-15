@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { BookA, Check, Play, Plus, RotateCcw, Search, Square } from "lucide-react";
 import type { Job } from "../lib/jobs";
 import type { TranscriptChunk } from "../lib/protocol";
@@ -106,8 +106,10 @@ function isUnsure(chunk: TranscriptChunk, hasSpeakers: boolean): boolean {
  * The transcript as a list of lines that can be checked and corrected: play a
  * line's audio, change its speaker, edit its text, or revert the change.
  * Edits go into the job's result, so Copy and every export include them.
+ * Memoised: a running job updates the queue several times a second, and an
+ * open transcript only needs to re-render when its own job or the list changes.
  */
-export function TranscriptReview({
+export const TranscriptReview = memo(function TranscriptReview({
   job,
   onEdit,
   onRevert,
@@ -167,9 +169,13 @@ export function TranscriptReview({
   ).filter((s) => !ignored.has(groupKey(s)));
   // The same misheard words → the same term, in order of first appearance.
   const groups: Suggestion[][] = [];
+  const byLine = new Map<number, Suggestion[]>();
   {
     const byKey = new Map<string, Suggestion[]>();
     for (const s of suggestions) {
+      const line = byLine.get(s.index);
+      if (line) line.push(s);
+      else byLine.set(s.index, [s]);
       const key = groupKey(s);
       const group = byKey.get(key);
       if (group) group.push(s);
@@ -180,7 +186,7 @@ export function TranscriptReview({
       }
     }
   }
-  const suggestionsIn = (index: number) => suggestions.filter((s) => s.index === index);
+  const suggestionsIn = (index: number) => byLine.get(index) ?? [];
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAt = useRef(0);
@@ -740,4 +746,4 @@ export function TranscriptReview({
       )}
     </div>
   );
-}
+});

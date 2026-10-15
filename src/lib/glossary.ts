@@ -241,8 +241,10 @@ interface Span {
   key: string;
 }
 
+type InLine = Omit<Suggestion, "index">;
+
 /** Suggestions in one line of text. */
-function suggestIn(text: string, index: number, terms: Prepared[], maxWords: number): Suggestion[] {
+function suggestIn(text: string, terms: Prepared[], maxWords: number): InLine[] {
   const words = [...text.matchAll(WORD)].map((m) => ({ start: m.index!, end: m.index! + m[0].length }));
   // Each stretch of words is spelled out once, not once per term.
   const spans = new Map<string, Span>();
@@ -264,7 +266,7 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
     }
     return found;
   };
-  const out: Suggestion[] = [];
+  const out: InLine[] = [];
   for (let i = 0; i < words.length; ) {
     let best: { term: Prepared; length: number; score: number } | null = null;
     let already = 0; // words at i that already spell a term exactly
@@ -297,7 +299,7 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
       i += already;
     } else if (best) {
       const { start, end, raw } = span(i, best.length);
-      out.push({ index, start, end, found: raw, term: best.term.term });
+      out.push({ start, end, found: raw, term: best.term.term });
       i += best.length;
     } else {
       i++;
@@ -306,12 +308,35 @@ function suggestIn(text: string, index: number, terms: Prepared[], maxWords: num
   return out;
 }
 
+/**
+ * Per word list (the same array, as long as it is unchanged): its prepared
+ * terms and every line text already searched with it. Searching every line of
+ * a long transcript against a long list takes seconds; with this, an edit or a
+ * reopened transcript only searches lines it hasn't seen.
+ */
+const searched = new WeakMap<
+  string[],
+  { prepared: Prepared[]; maxWords: number; lines: Map<string, InLine[]> }
+>();
+
 /** Every suggestion in the transcript, line by line and left to right. */
 export function findSuggestions(chunks: TranscriptChunk[], terms: string[]): Suggestion[] {
-  const prepared = prepare(terms);
+  let list = searched.get(terms);
+  if (!list) {
+    const prepared = prepare(terms);
+    list = { prepared, maxWords: Math.max(0, ...prepared.map((p) => p.words)) + 1, lines: new Map() };
+    searched.set(terms, list);
+  }
+  const { prepared, maxWords, lines } = list;
   if (prepared.length === 0) return [];
-  const maxWords = Math.max(...prepared.map((p) => p.words)) + 1;
-  return chunks.flatMap((chunk, index) => suggestIn(chunk.text, index, prepared, maxWords));
+  return chunks.flatMap((chunk, index) => {
+    let found = lines.get(chunk.text);
+    if (!found) {
+      found = suggestIn(chunk.text, prepared, maxWords);
+      lines.set(chunk.text, found);
+    }
+    return found.map((s) => ({ ...s, index }));
+  });
 }
 
 /**
