@@ -21,8 +21,9 @@ merge (feature branches get preview addresses). Settings live in `wrangler.toml`
 - **`workers/limiter/`** is a small Worker that limits each visitor to 30 proxy requests a minute.
   Pages Functions can't use Cloudflare's rate limiter themselves, so the proxy asks this Worker through
   the `LIMITER` service binding in `wrangler.toml`. It isn't deployed with the site: run
-  `npx wrangler deploy` in `workers/limiter/` once (and after changing the limit), before the binding
-  reaches the live site. Without it the proxy lets requests through. A dashboard rate-limiting rule
+  `npx wrangler deploy` in `workers/limiter/` once (and after changing the limit). **It must exist
+  before the site deploys** — Pages refuses to publish the Function while the bound Worker is missing.
+  If the limiter errors at run time, the proxy lets requests through. A dashboard rate-limiting rule
   would need the domain's DNS on Cloudflare; this one works with the CNAME at another provider.
 - **`public/site.webmanifest` + `public/sw.js`** make it installable and let it open offline after one
   visit (the service worker caches the app's own files; models are cached by Transformers.js).

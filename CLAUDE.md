@@ -161,7 +161,8 @@ strict CSP — any new outside host the app talks to must be added there or it i
 through the proxy first. `functions/proxy.php.ts` is the Pages version of `proxy.php` (same-origin callers,
 feeds/media only, 30 requests a minute per visitor through the `workers/limiter` Worker and the `LIMITER`
 service binding — Pages Functions can't hold a rate-limit binding, and a dashboard rule would need the DNS
-on Cloudflare; the Worker is deployed by hand with `npx wrangler deploy`, and without it the proxy fails open). `public/sw.js` precaches the app on install for offline use; it only touches same-origin
+on Cloudflare; the Worker is deployed by hand with `npx wrangler deploy` and must exist before Pages deploys — a missing
+Worker fails the whole deploy; if the limiter errors at run time, the proxy fails open). `public/sw.js` precaches the app on install for offline use; it only touches same-origin
 files and is registered in production builds only. Check locally with `npx wrangler pages dev dist`.
 Pages rejects files over 25 MiB, so `vite.config.ts` drops the unused ONNX Runtime `.wasm` copy Vite would
 emit (Transformers.js loads the runtime from jsDelivr, which the CSP allows).

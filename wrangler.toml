@@ -5,8 +5,8 @@ name = "vem-sa-vad"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-10-08"
 
-# Per-visitor limit on /proxy.php, kept by the Worker in workers/limiter (deploy
-# that first). The proxy lets requests through when the binding isn't there.
+# Per-visitor limit on /proxy.php, kept by the Worker in workers/limiter. Deploy
+# that Worker first: Pages refuses to deploy while it doesn't exist.
 [[services]]
 binding = "LIMITER"
 service = "vem-sa-vad-limiter"

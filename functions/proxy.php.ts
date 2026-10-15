@@ -146,8 +146,9 @@ function visitorKey(ip: string): string {
 
 /**
  * Whether this visitor is under the limit. Requests go through when there is
- * no limiter (dev, or a deploy before the Worker exists) or it fails: podcasts
- * shouldn't break because the limiter did.
+ * no limiter (`npm run dev`) or it fails: podcasts shouldn't break because the
+ * limiter did. (On Pages the binding is never missing: a deploy is refused
+ * while the Worker doesn't exist.)
  */
 async function allowed(request: Request, env: Env | undefined): Promise<boolean> {
   const ip = request.headers.get("CF-Connecting-IP");
