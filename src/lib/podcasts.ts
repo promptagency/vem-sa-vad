@@ -129,12 +129,36 @@ function parseDuration(raw: string): number | null {
   return parts.reduce((acc, n) => acc * 60 + n, 0); // HH:MM:SS or MM:SS
 }
 
+/**
+ * A feed's bytes as text. Nearly all feeds are UTF-8, which a Latin-1 "å" can't
+ * pass for, so strict UTF-8 is tried first and a feed that reads today keeps
+ * reading the same. Otherwise the feed's own charset is used (its XML prolog,
+ * then the Content-Type), or Windows-1252, the usual one for older feeds.
+ */
+function decodeFeed(bytes: ArrayBuffer, contentType: string | null): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    /* not UTF-8 */
+  }
+  const prolog = new TextDecoder("windows-1252").decode(bytes.slice(0, 200));
+  const declared =
+    /encoding=["']([\w.:-]+)["']/i.exec(prolog)?.[1] ?? /charset=([^;\s]+)/i.exec(contentType ?? "")?.[1];
+  // A feed that claims UTF-8 but isn't has just shown it isn't.
+  const label = declared && !/^utf-?8$/i.test(declared) ? declared : "windows-1252";
+  try {
+    return new TextDecoder(label).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1252").decode(bytes); // a label the browser doesn't know
+  }
+}
+
 export async function fetchEpisodes(
   feedUrl: string,
   proxyBase: string,
 ): Promise<{ podcastTitle: string; episodes: Episode[] }> {
   const res = await fetchMaybeProxied(feedUrl, proxyBase);
-  const xmlText = await res.text();
+  const xmlText = decodeFeed(await res.arrayBuffer(), res.headers.get("Content-Type"));
   const doc = new DOMParser().parseFromString(xmlText, "application/xml");
 
   if (doc.querySelector("parsererror")) {
