@@ -47,7 +47,7 @@ async function fetchMaybeProxied(
   init?: RequestInit,
 ): Promise<Response> {
   let proxy: "none" | "status" | "unreachable" = "none";
-  let busy = false; // the hosted proxy's per-visitor limit
+  let busy = false; // the hosted proxy's own per-visitor limit, not a host's 429
   let detail = "";
   try {
     const res = await fetch(proxied(url, proxyBase), init);
@@ -55,7 +55,7 @@ async function fetchMaybeProxied(
     // static host answers with the app's own page, or with proxy.php's source
     // where PHP isn't running — neither is the feed or the episode.
     if (res.ok && res.headers.get(PROXY_MARKER) === "1") return res;
-    busy = res.status === 429;
+    busy = res.status === 429 && res.headers.get(PROXY_MARKER) === "1";
     if (!res.ok) {
       proxy = "status";
       detail = String(res.status);

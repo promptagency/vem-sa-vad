@@ -132,6 +132,19 @@ interface Env {
 }
 
 /**
+ * An IPv4 address, or an IPv6 address's /64: one connection usually has a whole
+ * /64 and could otherwise take a fresh allowance with each address in it.
+ */
+function visitorKey(ip: string): string {
+  if (ip.includes(".")) return ip.slice(ip.lastIndexOf(":") + 1); // IPv4, also as ::ffff:a.b.c.d
+  const [head, tail = ""] = ip.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = ip.includes("::") ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right] : left;
+  return groups.slice(0, 4).map((g) => parseInt(g, 16).toString(16)).join(":") + "::/64";
+}
+
+/**
  * Whether this visitor is under the limit. Requests go through when there is
  * no limiter (dev, or a deploy before the Worker exists) or it fails: podcasts
  * shouldn't break because the limiter did.
@@ -140,7 +153,7 @@ async function allowed(request: Request, env: Env | undefined): Promise<boolean>
   const ip = request.headers.get("CF-Connecting-IP");
   if (!env?.LIMITER || !ip) return true;
   try {
-    const res = await env.LIMITER.fetch(`https://limiter/?key=${encodeURIComponent(ip)}`);
+    const res = await env.LIMITER.fetch(`https://limiter/?key=${encodeURIComponent(visitorKey(ip))}`);
     return res.status !== 429;
   } catch {
     return true;
@@ -153,10 +166,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (site && site !== "same-origin") {
     return refuse(403, "This proxy only serves the Vem sa vad? app itself.");
   }
-  // Scripts can leave that header out, so each visitor also gets a limited rate.
-  if (!(await allowed(request, env))) {
-    return refuse(429, "Too many requests through this proxy; try again in a minute.");
-  }
 
   const target = new URL(request.url).searchParams.get("url");
   if (!target) return refuse(400, "Missing url parameter");
@@ -165,6 +174,15 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     url = new URL(target);
   } catch {
     return refuse(400, "Invalid url");
+  }
+  // Scripts can leave that header out, so each visitor also gets a limited rate.
+  // Marked as the proxy's own answer, so the app can tell it from a podcast
+  // host's 429 passed through below.
+  if (!(await allowed(request, env))) {
+    const busy = refuse(429, "Too many requests through this proxy; try again in a minute.");
+    busy.headers.set("Retry-After", "60");
+    busy.headers.set("X-Vem-Sa-Vad-Proxy", "1");
+    return busy;
   }
   // Redirects are followed by hand so every hop gets the same checks.
   let upstream: Response | null = null;

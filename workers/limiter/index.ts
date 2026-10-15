@@ -9,7 +9,9 @@ interface Env {
 
 export default {
   async fetch(request, env): Promise<Response> {
-    const key = new URL(request.url).searchParams.get("key") ?? "";
+    const key = new URL(request.url).searchParams.get("key");
+    // A missing key would put every visitor in one shared bucket.
+    if (!key) return new Response(null, { status: 400 });
     const { success } = await env.PROXY.limit({ key });
     return new Response(null, { status: success ? 204 : 429 });
   },

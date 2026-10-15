@@ -77,6 +77,7 @@ const sv = {
           "Filen måste gå att spela upp i webbläsaren. Kopieringsskyddade eller ovanliga format fungerar inte.",
           "Ljudet sparas aldrig, så transkriptioner som du har sparat kan inte spela upp rader efter en omladdning.",
           "Första gången krävs nätverk för att hämta modellen (110 MB–2 GB beroende på modell).",
+          "Poddar hämtas via sidans server, som tar emot högst 30 hämtningar i minuten från samma IP-adress så att den inte kan missbrukas. Adressen används bara till den räkningen.",
         ],
       },
       {
@@ -486,6 +487,7 @@ const en: Strings = {
           "The file must be playable in the browser. Copy-protected or unusual formats don’t work.",
           "Audio is never stored, so transcripts you have kept can’t play lines after a reload.",
           "The first time, a network connection is needed to download the model (110 MB–2 GB depending on the model).",
+          "Podcasts are fetched through the site’s server, which accepts at most 30 requests a minute from the same IP address so it can’t be misused. The address is used only for that count.",
         ],
       },
       {
