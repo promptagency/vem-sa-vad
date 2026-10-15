@@ -18,9 +18,18 @@ merge (feature branches get preview addresses). Settings live in `wrangler.toml`
   enforces it, so "nothing is uploaded" can be checked, not just trusted. Change it deliberately: any
   new outside host the app talks to must be added there or it is blocked.
 - **`functions/proxy.php.ts`** is the Pages version of the [podcast proxy](#the-podcast-proxy).
+- **`workers/limiter/`** is a small Worker that limits each visitor to 30 proxy requests a minute.
+  Pages Functions can't use Cloudflare's rate limiter themselves, so the proxy asks this Worker through
+  the `LIMITER` service binding in `wrangler.toml`. It isn't deployed with the site: run
+  `npx wrangler deploy` in `workers/limiter/` once (and after changing the limit). **It must exist
+  before the site deploys** — Pages refuses to publish the Function while the bound Worker is missing.
+  If the limiter errors at run time, the proxy lets requests through. A dashboard rate-limiting rule
+  would need the domain's DNS on Cloudflare; this one works with the CNAME at another provider.
 - **`public/site.webmanifest` + `public/sw.js`** make it installable and let it open offline after one
   visit (the service worker caches the app's own files; models are cached by Transformers.js).
-- Check the hosted setup locally with `npm run build && npx wrangler pages dev dist`.
+- Check the hosted setup locally with `npm run build && npx wrangler pages dev dist`, with the limiter
+  running in another terminal (`npx wrangler dev` in `workers/limiter/`). Wrangler must be new enough
+  for the `compatibility_date` in `wrangler.toml`.
 - The custom domain is a CNAME at the domain's DNS provider pointing to the project's `pages.dev`
   address, added in the Pages dashboard *first* — creating the CNAME before that gives a 522 error.
 
@@ -63,6 +72,8 @@ follow the same rules:
 - **Only this site's own pages** may call it; requests from other sites' pages are refused.
 - **No private or reserved addresses**, re-checked on every redirect (the PHP version also pins the
   connection to the checked address).
+- **A limited rate** per visitor on Cloudflare (see `workers/limiter/` above); the PHP version has
+  none, so use your server's own tools if you need one.
 
 Without the proxy, file and microphone transcription still work, and podcasts work for any host that
 happens to send CORS headers. In development, `npm run dev` serves a stand-in for `/proxy.php`;

@@ -77,6 +77,7 @@ const sv = {
           "Filen måste gå att spela upp i webbläsaren. Kopieringsskyddade eller ovanliga format fungerar inte.",
           "Ljudet sparas aldrig, så transkriptioner som du har sparat kan inte spela upp rader efter en omladdning.",
           "Första gången krävs nätverk för att hämta modellen (110 MB–2 GB beroende på modell).",
+          "Poddar hämtas via sidans server, som tar emot högst 30 hämtningar i minuten från samma IP-adress så att den inte kan missbrukas. Adressen används bara till den räkningen.",
         ],
       },
       {
@@ -414,6 +415,7 @@ const sv = {
             ? `proxyn svarade HTTP ${p.detail}`
             : `proxyn gick inte att nå (${p.detail})`
       }, och servern tillåter inte direkt åtkomst. Kör \`npm run dev\`, eller lägg proxy.php (PHP + cURL) bredvid appen.`,
+    podcastBusy: () => "För många poddhämtningar på kort tid. Vänta en minut och försök igen.",
     searchHttp: (p: { status: number }) => `Poddsökningen misslyckades (HTTP ${p.status}).`,
     badFeed: () => "Flödet är inte giltig RSS/XML.",
     workerCrashed: () => "Transkriberingen stannade oväntat.",
@@ -485,6 +487,7 @@ const en: Strings = {
           "The file must be playable in the browser. Copy-protected or unusual formats don’t work.",
           "Audio is never stored, so transcripts you have kept can’t play lines after a reload.",
           "The first time, a network connection is needed to download the model (110 MB–2 GB depending on the model).",
+          "Podcasts are fetched through the site’s server, which accepts at most 30 requests a minute from the same IP address so it can’t be misused. The address is used only for that count.",
         ],
       },
       {
@@ -819,6 +822,7 @@ const en: Strings = {
             ? `the proxy answered HTTP ${p.detail}`
             : `the proxy couldn't be reached (${p.detail})`
       }, and the host doesn't allow direct access. Run \`npm run dev\`, or deploy proxy.php (PHP + cURL) next to the app.`,
+    podcastBusy: () => "Too many podcast requests in a short time. Wait a minute and try again.",
     searchHttp: (p) => `Podcast search failed (HTTP ${p.status}).`,
     badFeed: () => "This feed isn't valid RSS/XML.",
     workerCrashed: () => "The transcription worker stopped unexpectedly.",

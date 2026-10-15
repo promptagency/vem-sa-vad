@@ -1,0 +1,17 @@
+# Rate limiter for the hosted podcast proxy (functions/proxy.php.ts), bound to
+# the Pages project as LIMITER in ../../wrangler.toml. Deploy once, and again
+# after changing the limit: `npx wrangler deploy` in this folder.
+name = "vem-sa-vad-limiter"
+main = "index.ts"
+compatibility_date = "2026-10-08"
+# Only the Pages project calls it, through the service binding.
+workers_dev = false
+preview_urls = false
+
+[[ratelimits]]
+name = "PROXY"
+# Any integer unique to the account.
+namespace_id = "1001"
+# Per visitor IP and Cloudflare location. A podcast session makes a request for
+# the feed and one per episode as it is transcribed, far below this.
+simple = { limit = 30, period = 60 }
