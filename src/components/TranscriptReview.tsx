@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { BookA, Check, Play, Plus, RotateCcw, Search, Square } from "lucide-react";
 import type { Job } from "../lib/jobs";
 import type { TranscriptChunk } from "../lib/protocol";
@@ -106,8 +106,10 @@ function isUnsure(chunk: TranscriptChunk, hasSpeakers: boolean): boolean {
  * The transcript as a list of lines that can be checked and corrected: play a
  * line's audio, change its speaker, edit its text, or revert the change.
  * Edits go into the job's result, so Copy and every export include them.
+ * Memoised: a running job updates the queue several times a second, and an
+ * open transcript only needs to re-render when its own job or the list changes.
  */
-export function TranscriptReview({
+export const TranscriptReview = memo(function TranscriptReview({
   job,
   onEdit,
   onRevert,
@@ -744,4 +746,4 @@ export function TranscriptReview({
       )}
     </div>
   );
-}
+});
