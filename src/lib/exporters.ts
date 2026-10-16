@@ -133,6 +133,8 @@ export function toTxt(
 function cuesFrom(result: TranscriptResult): TranscriptResult["chunks"] {
   const chunks = result.chunks?.filter((c) => c.text.trim().length > 0) ?? [];
   if (chunks.length > 0) return chunks;
+  // A silent recording has no cues: an empty one is rejected by strict players.
+  if (!result.text.trim()) return [];
   // No timestamps available — emit one cue spanning the whole text.
   return [{ text: result.text.trim(), timestamp: [0, null] }];
 }
@@ -272,11 +274,11 @@ function clockTime(seconds: number, withHours: boolean): string {
 /** Escape text so Markdown shows it literally instead of formatting it. */
 function escapeMarkdown(text: string): string {
   return text
-    .replace(/([\\`*_[\]<>#|~])/g, "\\$1")
+    .replace(/([\\`*_[\]<>#|~&])/g, "\\$1") // & too, or "&copy;" shows as ©
     // "1994. Something", "1) …" or Whisper's subtitle-style "- Hej." at the
     // start of a paragraph would become a list item.
     .replace(/^(\d+)([.)])/, "$1\\$2")
-    .replace(/^([-+])(?=\s|$)/, "\\$1");
+    .replace(/^([-+])(?=[\s-]|$)/, "\\$1"); // and "---" would be a horizontal rule
 }
 
 /** YYYY-MM-DD in the user's own time zone (toISOString would give UTC's date). */
