@@ -10,6 +10,9 @@
 // threshold below it caught 10–11 of the misheard terms per transcript and
 // made no false suggestion in 4,200 words of ordinary Swedish prose, where a
 // looser 0.75 turned "ville", "vit" and "visste" into "Vite".
+// scripts/eval-glossary.mjs measures it on text: false suggestions in 40,000
+// words of prose, and hits on hand-made mishearings. Re-run it when matching
+// changes.
 import type { TranscriptChunk } from "./protocol";
 
 /** How alike (1 = identical) a stretch of words must sound to a term. */
@@ -168,19 +171,29 @@ export function soundKey(text: string): string {
     .replace(/(.)\1+/gu, "$1");
 }
 
-/** Edit distance between `a` and `b`, or `limit + 1` as soon as it must exceed `limit`. */
+/**
+ * Edit distance between `a` and `b`, or `limit + 1` as soon as it must exceed
+ * `limit`. Two neighbouring letters swapped count as one edit, not two:
+ * "plausibel" for "Plausible" is one slip (optimal string alignment).
+ */
 function boundedDistance(a: string, b: string, limit: number): number {
   if (Math.abs(a.length - b.length) > limit) return limit + 1;
+  let before: number[] = []; // the row before `previous`, for swaps
   let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {
     const current = [i];
     let best = i;
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
-      if (current[j] < best) best = current[j];
+      let d = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, before[j - 2] + 1);
+      current[j] = d;
+      if (d < best) best = d;
     }
+    // A swap costs at least the substitution it replaces, so the row minimum
+    // still never decreases and stopping early stays safe.
     if (best > limit) return limit + 1;
+    before = previous;
     previous = current;
   }
   return previous[b.length];
@@ -273,7 +286,9 @@ function suggestIn(text: string, terms: Prepared[], maxWords: number): InLine[] 
     for (let length = 1; length <= maxWords && i + length <= words.length; length++) {
       const here = span(i, length);
       for (const term of terms) {
-        if (length < term.words - 1 || length > term.words + 1) continue;
+        // Words more or fewer than the term are compared only one off, except a
+        // single word, which may be the whole term run together ("Vemsavad").
+        if (length !== 1 && (length < term.words - 1 || length > term.words + 1)) continue;
         if (here.plain === term.plain) {
           // Spelled like the term already (perhaps in other case): leave it,
           // and don't let a looser match claim these words either.

@@ -21,6 +21,12 @@ test("misheard names that sound like a term are suggested (the examples in gloss
   ]);
 });
 
+test("a term run together into one word, and two swapped letters, are still found", () => {
+  assert.deepEqual(found([" Appen heter Vemsavad nu."], ["Vem sa vad?"]), [[0, "Vemsavad", "Vem sa vad?"]]);
+  assert.deepEqual(found([" Vi räknar i Plausibel."], ["Plausible"]), [[0, "Plausibel", "Plausible"]]);
+  assert.deepEqual(found([" Det kallas kvantissering."], ["kvantisering"]).map((s) => s[2]), ["kvantisering"]);
+});
+
 test("no suggestion for a term already spelled right, or for ordinary words", () => {
   assert.deepEqual(found([" Micke Quick och micke quick."], ["Micke Quick"]), []);
   assert.deepEqual(found([" Han ville ha en vit bil men visste inte."], ["Vite"]), []);
