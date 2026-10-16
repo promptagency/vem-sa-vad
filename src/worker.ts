@@ -608,6 +608,14 @@ async function handle(msg: ToWorker): Promise<void> {
     };
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
+        // Loaded apart from the run: a model that can't be fetched (offline)
+        // fails the same in a smaller window, so that's reported at once.
+        await ensureDiarizer();
+      } catch (err) {
+        lastError = err;
+        break;
+      }
+      try {
         post({
           type: "diarize-result",
           jobId: msg.jobId,
