@@ -863,6 +863,10 @@ export default function App() {
               <Download className="size-4" /> {t.settings.applyReload}
             </button>
           )}
+          {/* A model, quality or backend chosen during a job loads after it (see drain). */}
+          {state.status === "ready" && !loadedForModel && activeJob && (
+            <p className="mt-4 text-sm text-neutral-400">{t.settings.changeAfterJob}</p>
+          )}
         </Card>
       )}
 

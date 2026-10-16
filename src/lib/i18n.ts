@@ -159,6 +159,7 @@ const sv = {
     },
     heading: "Finjustera",
     applyReload: "Använd och ladda om modellen",
+    changeAfterJob: "Ändringen gäller från nästa fil. Filen som transkriberas nu blir klar med den nuvarande modellen.",
     model: "Modell",
     group: {
       "Swedish — KB-Whisper": "Svenska — KB-Whisper",
@@ -572,6 +573,7 @@ const en: Strings = {
     },
     heading: "Fine-tune",
     applyReload: "Apply & reload model",
+    changeAfterJob: "The change applies from the next file. The file being transcribed now finishes with the current model.",
     model: "Model",
     group: {
       "Swedish — KB-Whisper": "Swedish — KB-Whisper",
