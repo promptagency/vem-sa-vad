@@ -598,6 +598,7 @@ async function handle(msg: ToWorker): Promise<void> {
     // halved and the whole run retried.
     let windowSec = DIARIZE_WINDOW_SECONDS;
     let lastError: unknown = null;
+    let triedSec = windowSec; // the window of the last pass that failed
     // A retry starts the pass over; holding progress at its high-water mark
     // keeps the bar from jumping back to zero while it catches up.
     let reported = 0;
@@ -616,6 +617,7 @@ async function handle(msg: ToWorker): Promise<void> {
         return;
       } catch (err) {
         lastError = err;
+        triedSec = windowSec;
         // Offline, the speaker model can't be fetched in any window size:
         // report it now rather than after three more tries.
         if (!navigator.onLine) break;
@@ -627,13 +629,19 @@ async function handle(msg: ToWorker): Promise<void> {
       }
     }
     // A raw memory address rather than a message means a WASM abort, which is
-    // almost always memory. Say something the user can act on.
+    // almost always memory (unless offline). Say something the user can act on:
+    // in English here (bench.html shows it as is), and as oomMinutes for the
+    // app, which words it in the interface language.
     const raw = String((lastError as Error)?.message ?? lastError);
+    const oomMinutes = /^\d+$/.test(raw) && navigator.onLine ? Math.round(triedSec / 60) : undefined;
     post({
       type: "error",
       jobId: msg.jobId,
-      message: raw,
-      ...(/^\d+$/.test(raw) && { oomMinutes: Math.round((windowSec * 2) / 60) }),
+      message:
+        oomMinutes != null
+          ? `Not enough memory for speaker separation, even in ${oomMinutes}-minute chunks. A smaller Whisper model leaves more room for it.`
+          : raw,
+      ...(oomMinutes != null && { oomMinutes }),
     });
     return;
   }
