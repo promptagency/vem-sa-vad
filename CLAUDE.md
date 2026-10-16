@@ -14,13 +14,21 @@ Vite 7 + React 19 + TypeScript + Tailwind 4, built as a static site (`base: './'
 ```bash
 npm install
 npm run dev         # http://localhost:5173 — includes a dev stand-in for proxy.php
-npm run typecheck   # tsc -b --noEmit
+npm run typecheck   # tsc -b --noEmit (also functions/, workers/limiter/, tests/)
+npm test            # node --test: the logic tests in tests/
 npm run build       # tsc -b && vite build → dist/
 npm run preview     # serves dist/ — has NO podcast proxy, so podcasts mostly fail here
 ```
 
-There is no test runner and no linter. Verify changes with `npm run typecheck` / `npm run build`, and in the
-browser for anything touching transcription (Chrome/Edge for WebGPU).
+`tests/` holds Node's built-in test runner tests (no dependency) for the logic that breaks silently: speaker
+windows, stitching and assignment (`diarize.ts`, on hand-made activity — no model), find & replace, word-list
+matching, exports and the ZIP writer. They import the `.ts` sources directly, so those modules may only have
+type imports (Node can't follow the app's extensionless paths). CI runs them; add a case when you change that
+logic, preferably the example its own comment gives. CI runs Node from `.node-version` (22), where type
+stripping needs `--experimental-strip-types` and `--test` needs a file glob, not a folder — check new test
+commands there (`npx node@22 …`), not only on a newer local Node. There is no linter. Verify changes with `npm test`,
+`npm run typecheck` / `npm run build`, and in the browser for anything touching transcription (Chrome/Edge for
+WebGPU).
 
 Transcription speed and word error rate are measured in the browser with `bench.html` (dev server only) on a
 recording from `scripts/make-bench-audio.sh` — see `docs/benchmark.md`, and add a row there when a change is
