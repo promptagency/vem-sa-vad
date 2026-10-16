@@ -8,10 +8,8 @@ const ACCEPT = ["audio/*", "video/*", ...ACCEPTED_EXTS.map((e) => `.${e}`)].join
 
 export function Dropzone({
   onFiles,
-  disabled,
 }: {
   onFiles: (files: File[]) => void;
-  disabled?: boolean;
 }) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,19 +25,19 @@ export function Dropzone({
     <div
       onDragOver={(e) => {
         e.preventDefault();
-        if (!disabled) setHover(true);
+        setHover(true);
       }}
       onDragLeave={() => setHover(false)}
       onDrop={(e) => {
         e.preventDefault();
         setHover(false);
-        if (!disabled) handleFiles(e.dataTransfer.files);
+        handleFiles(e.dataTransfer.files);
       }}
-      onClick={() => !disabled && inputRef.current?.click()}
+      onClick={() => inputRef.current?.click()}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !disabled)
+        if (e.key === "Enter" || e.key === " ")
           inputRef.current?.click();
       }}
       className={`group flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed px-6 py-[86px] text-center transition sm:py-[99px] ${
@@ -47,7 +45,7 @@ export function Dropzone({
           ? "scale-[1.01] border-brand-400/70 bg-brand-400/[0.06]"
           : // The same surface as the Spela in and Podd panels (Card).
             "border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur hover:border-brand-400/40"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      }`}
     >
       <input
         ref={inputRef}

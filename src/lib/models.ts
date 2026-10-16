@@ -222,8 +222,6 @@ export function findModel(id: string): ModelOption | undefined {
 // ── Simple top-level "what language?" grouping ──────────────────────────────
 export type Family = "swedish" | "multilingual" | "english";
 
-export const FAMILY_ORDER: Family[] = ["swedish", "multilingual", "english"];
-
 export const FAMILY_DEFAULT_MODEL: Record<Family, string> = {
   swedish: "KBLab/kb-whisper-base",
   multilingual: "Xenova/whisper-base",

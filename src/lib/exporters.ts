@@ -5,15 +5,13 @@ import type { TranscriptResult } from "./protocol";
 // longer a download — it's what Copy gives (toTxt) — but JSON still builds on it.
 export type ExportFormat = "txt" | "md" | "srt" | "vtt" | "json";
 
-// The labels are for the developer benchmark page; the app shows its own (i18n).
-export const EXPORT_FORMATS: { value: ExportFormat; label: string; ext: string }[] =
-  [
-    { value: "txt", label: "Document (.txt)", ext: "txt" },
-    { value: "md", label: "Document (.md)", ext: "md" },
-    { value: "srt", label: "Subtitles (.srt)", ext: "srt" },
-    { value: "vtt", label: "WebVTT (.vtt)", ext: "vtt" },
-    { value: "json", label: "JSON (.json)", ext: "json" },
-  ];
+export const EXPORT_FORMATS: { value: ExportFormat; ext: string }[] = [
+  { value: "txt", ext: "txt" },
+  { value: "md", ext: "md" },
+  { value: "srt", ext: "srt" },
+  { value: "vtt", ext: "vtt" },
+  { value: "json", ext: "json" },
+];
 
 export function mimeFor(format: ExportFormat): string {
   switch (format) {
