@@ -140,6 +140,21 @@ export function ProcessingHero({
     return () => window.clearTimeout(timer);
   }, [downloading, state.overall]);
 
+  // Browsers throttle hidden tabs hard: a job crawls and its progress barely
+  // moves. Once the tab has been hidden during this job, say why.
+  const jobId = activeJob?.id;
+  const [wasHidden, setWasHidden] = useState(false);
+  useEffect(() => {
+    setWasHidden(false);
+    if (!jobId) return;
+    const check = () => {
+      if (document.visibilityState === "hidden") setWasHidden(true);
+    };
+    check();
+    document.addEventListener("visibilitychange", check);
+    return () => document.removeEventListener("visibilitychange", check);
+  }, [jobId]);
+
   const hasWork = loading || !!activeJob;
   if (!hasWork) return null;
 
@@ -200,6 +215,11 @@ export function ProcessingHero({
               {activeJob.warning && (
                 <p className="mt-3 text-sm text-amber-300">
                   {formatMessage(t, activeJob.warning)}
+                </p>
+              )}
+              {wasHidden && (
+                <p role="status" className="mt-3 text-sm text-neutral-300">
+                  {t.processing.tabHidden}
                 </p>
               )}
 
