@@ -300,6 +300,8 @@ const sv = {
     cachedAfter: (pct: number) => `${pct} % · sparas i webbläsaren efter första gången`,
     slowServer:
       "Servern är långsam just nu – nedladdningen fortsätter. Första gången en modell hämtas kan det ta en stund.",
+    tabHidden:
+      "Fliken var dold en stund. Då saktar webbläsaren ner arbetet – låt fliken vara synlig tills det är klart.",
     preparing: (device: string) => `Förbereder körning på ${device}`,
     queueProgress: "Förlopp i kön",
     done: (done: number, total: number) => `${done} av ${total} klara`,
@@ -713,6 +715,7 @@ const en: Strings = {
     cachedAfter: (pct) => `${pct}% · cached in your browser after the first time`,
     slowServer:
       "The server is slow right now – the download continues. The first download of a model can take a while.",
+    tabHidden: "The tab was hidden for a while. Browsers slow down hidden tabs – keep it visible until this is done.",
     preparing: (device) => `Preparing ${device} runtime`,
     queueProgress: "Queue progress",
     done: (done, total) => `${done} / ${total} done`,

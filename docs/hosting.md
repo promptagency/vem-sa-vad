@@ -17,6 +17,9 @@ merge (feature branches get preview addresses). Settings live in `wrangler.toml`
   jsDelivr (the ONNX runtime), Apple's podcast search and Prompt Agency's Plausible. The browser
   enforces it, so "nothing is uploaded" can be checked, not just trusted. Change it deliberately: any
   new outside host the app talks to must be added there or it is blocked.
+- **`public/404.html`** answers paths that aren't files and sends visitors to the start page. Its presence
+  also turns off Pages' SPA fallback, which served the app at every path — where its relative script URLs
+  came back as HTML and the page stayed blank.
 - **`functions/proxy.php.ts`** is the Pages version of the [podcast proxy](#the-podcast-proxy).
 - **`workers/limiter/`** is a small Worker that limits each visitor to 30 proxy requests a minute.
   Pages Functions can't use Cloudflare's rate limiter themselves, so the proxy asks this Worker through
@@ -52,8 +55,10 @@ by the build.
 - **No COOP/COEP headers needed** for WebGPU or single-threaded WASM — they're left commented out in
   `.htaccess`. Enabling them (as `npm run dev` does) makes the CPU fallback multithreaded, which matters
   for visitors without WebGPU; that setup has not been tested on a deployed server.
-- **Serving from a subfolder** needs no rebuild. If Apache's fallback misbehaves there, add a
+- **Serving from a subfolder** needs no rebuild. If Apache's rewrites misbehave there, add a
   `RewriteBase` to `.htaccess`.
+- **Unknown paths get a plain 404** — there is deliberately no fallback to `index.html`: the app has no
+  routes, and served at a deeper path its relative script URLs would come back as HTML.
 
 ## The podcast proxy
 

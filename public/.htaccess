@@ -8,9 +8,8 @@
 DirectoryIndex index.html
 
 RewriteEngine On
-# If you serve from a subfolder (https://host/whisper/) instead of the web
-# root, also set:  RewriteBase /whisper/  and change the fallback below to
-# /whisper/index.html — and build with vite `base: '/whisper/'`.
+# The build uses relative paths, so it works from a subfolder as it is; if
+# Apache's rewrites misbehave there, set:  RewriteBase /whisper/
 
 # --- 1. Force HTTPS ----------------------------------------------------------
 # Microphone (getUserMedia) and WebGPU both require a Secure Context.
@@ -66,9 +65,6 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
   </FilesMatch>
 </IfModule>
 
-# --- 6. SPA fallback ---------------------------------------------------------
-# Real files/dirs (including /assets/*.js and .wasm) are served as-is;
-# everything else falls through to index.html.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]
+# No SPA fallback: the app has no routes, and serving index.html at a deeper
+# path (/some/path) made its relative script URLs (/some/path/assets/…) come
+# back as HTML too, leaving a blank page. Unknown paths get Apache's 404.

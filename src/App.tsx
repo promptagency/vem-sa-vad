@@ -708,6 +708,22 @@ export default function App() {
     (j) => j.status === "done" || j.status === "error",
   ).length;
   const busy = state.status === "loading" || !!activeJob;
+  // Browsers throttle hidden tabs hard: downloads and jobs crawl and progress
+  // barely moves. Remember that the tab was hidden while anything ran, so the
+  // panel can say why — for the whole run (download, load, every queued job),
+  // reset only once nothing is left to do.
+  const running = busy || jobs.some((j) => j.status === "queued");
+  const [tabWasHidden, setTabWasHidden] = useState(false);
+  useEffect(() => {
+    setTabWasHidden(false);
+    if (!running) return;
+    const check = () => {
+      if (document.visibilityState === "hidden") setTabWasHidden(true);
+    };
+    check();
+    document.addEventListener("visibilitychange", check);
+    return () => document.removeEventListener("visibilitychange", check);
+  }, [running]);
 
   return (
     <I18nContext.Provider value={t}>
@@ -878,6 +894,7 @@ export default function App() {
             activeJob={activeJob}
             done={processed}
             total={sessionJobs.length}
+            tabWasHidden={tabWasHidden}
           />
         </div>
       )}
