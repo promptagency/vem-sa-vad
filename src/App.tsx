@@ -294,7 +294,11 @@ export default function App() {
       const savedAt = prev?.savedAt ?? Date.now();
       saved.current.set(id, { job, savedAt });
       void saveTranscript(toSaved(job, savedAt)!).then((ok) => {
-        if (ok) return;
+        // A save that works again clears the note; one that still fails sets it back.
+        if (ok) {
+          setSaveFailed(false);
+          return;
+        }
         setSaveFailed(true);
         // Not saved after all: forget it (unless a newer version has been
         // queued since), so the next pass tries again.
