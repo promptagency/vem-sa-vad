@@ -31,6 +31,12 @@ test("subtitles: timestamps, speaker names, and blank lines dropped", () => {
   assert.match(toVtt(result), /^WEBVTT\n\n00:00:00\.000 --> 00:00:01\.500\nSpeaker 1: Hej\.\n/);
 });
 
+test("labels come from the interface language the app passes in", () => {
+  const sv = { speaker: (n: number) => `Talare ${n}`, speakers: "Talare", untitled: "Transkription" };
+  assert.equal(toTxt(result, { 1: "Anna" }, sv), "Anna: Hej.\nTalare 2: Hallå.\nTalare 2: Ja.\n");
+  assert.match(render(result, "txt", {}, undefined, sv), /^Transkription\n.* · Talare: Talare 1, Talare 2\n/);
+});
+
 test("JSON keeps every chunk and agrees with the text export", () => {
   const json = JSON.parse(toJson(result, { 1: "Anna" }));
   assert.equal(json.text, toTxt(result, { 1: "Anna" }).trim());

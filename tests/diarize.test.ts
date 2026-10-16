@@ -25,7 +25,8 @@ test("planWindows covers the whole recording, overlapping by the set amount", ()
     assert.equal(windows[0].startSec, 0);
     assert.equal(windows.at(-1)!.endSec, duration);
     for (let i = 1; i < windows.length; i++) {
-      assert.equal(windows[i - 1].endSec - windows[i].startSec, DIARIZE_OVERLAP_SECONDS, `seam ${i} of ${duration}`);
+      const overlap = windows[i - 1].endSec - windows[i].startSec;
+      assert.ok(Math.abs(overlap - DIARIZE_OVERLAP_SECONDS) < 1e-9, `seam ${i} of ${duration}: ${overlap}`);
       assert.ok(windows[i].endSec > windows[i - 1].endSec);
     }
   }

@@ -24,7 +24,9 @@ npm run preview     # serves dist/ — has NO podcast proxy, so podcasts mostly 
 windows, stitching and assignment (`diarize.ts`, on hand-made activity — no model), find & replace, word-list
 matching, exports and the ZIP writer. They import the `.ts` sources directly, so those modules may only have
 type imports (Node can't follow the app's extensionless paths). CI runs them; add a case when you change that
-logic, preferably the example its own comment gives. There is no linter. Verify changes with `npm test`,
+logic, preferably the example its own comment gives. CI runs Node from `.node-version` (22), where type
+stripping needs `--experimental-strip-types` and `--test` needs a file glob, not a folder — check new test
+commands there (`npx node@22 …`), not only on a newer local Node. There is no linter. Verify changes with `npm test`,
 `npm run typecheck` / `npm run build`, and in the browser for anything touching transcription (Chrome/Edge for
 WebGPU).
 

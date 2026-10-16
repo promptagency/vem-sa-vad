@@ -10,7 +10,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit && tsc -p functions && tsc -p workers/limiter && tsc -p tests",
-    "test": "node --experimental-strip-types --test tests/"
+    "test": "node --experimental-strip-types --test 'tests/*.test.ts'"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",
