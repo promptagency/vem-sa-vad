@@ -69,7 +69,7 @@ async function fetchAndKeep(event, cache, request) {
   const response = await fetch(request);
   if (response.ok && response.type === "basic") {
     // The app is one page: keep one copy of it, not one per link it was opened
-    // from (?fbclid=…, utm tags, or any path the host answers with the app).
+    // from (?fbclid=…, utm tags). Other paths get a 404 page, which isn't kept.
     const key = request.mode === "navigate" ? "./" : request;
     event.waitUntil(cache.put(key, response.clone()).catch(() => {}));
   }
@@ -94,7 +94,12 @@ self.addEventListener("fetch", (event) => {
       try {
         return await fetchAndKeep(event, cache, request);
       } catch {
-        return (await cache.match(request.mode === "navigate" ? "./" : request)) ?? Response.error();
+        if (request.mode !== "navigate") return (await cache.match(request)) ?? Response.error();
+        // Offline at a deeper path, the page's relative script URLs would point
+        // below it and fail: send the browser to the app's own address instead.
+        const home = new URL("./", self.registration.scope);
+        if (url.pathname !== home.pathname) return Response.redirect(home.href, 302);
+        return (await cache.match("./")) ?? Response.error();
       }
     }),
   );

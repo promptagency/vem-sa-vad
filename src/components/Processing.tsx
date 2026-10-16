@@ -119,11 +119,14 @@ export function ProcessingHero({
   activeJob,
   done,
   total,
+  tabWasHidden,
 }: {
   state: ModelState;
   activeJob: Job | null;
   done: number;
   total: number;
+  /** The tab was hidden at some point during this run, which slows everything down. */
+  tabWasHidden: boolean;
 }) {
   const t = useT();
   const loading = state.status === "loading";
@@ -140,23 +143,7 @@ export function ProcessingHero({
     return () => window.clearTimeout(timer);
   }, [downloading, state.overall]);
 
-  // Browsers throttle hidden tabs hard: a job crawls and its progress barely
-  // moves. Once the tab has been hidden during this job, say why.
-  const jobId = activeJob?.id;
-  const [wasHidden, setWasHidden] = useState(false);
-  useEffect(() => {
-    setWasHidden(false);
-    if (!jobId) return;
-    const check = () => {
-      if (document.visibilityState === "hidden") setWasHidden(true);
-    };
-    check();
-    document.addEventListener("visibilitychange", check);
-    return () => document.removeEventListener("visibilitychange", check);
-  }, [jobId]);
-
-  const hasWork = loading || !!activeJob;
-  if (!hasWork) return null;
+  if (!loading && !activeJob) return null;
 
   const activeFraction = activeJob ? jobProgress(activeJob) : 0;
   const queuePct = total > 0 ? (done + activeFraction) / total : 0;
@@ -189,6 +176,11 @@ export function ProcessingHero({
                   {t.processing.slowServer}
                 </p>
               )}
+              {tabWasHidden && (
+                <p role="status" className="mt-1 text-sm text-neutral-300">
+                  {t.processing.tabHidden}
+                </p>
+              )}
               <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500">
                 {state.device === "webgpu" ? (
                   <Zap className="size-3.5 text-brand-300" />
@@ -217,7 +209,7 @@ export function ProcessingHero({
                   {formatMessage(t, activeJob.warning)}
                 </p>
               )}
-              {wasHidden && (
+              {tabWasHidden && (
                 <p role="status" className="mt-3 text-sm text-neutral-300">
                   {t.processing.tabHidden}
                 </p>
