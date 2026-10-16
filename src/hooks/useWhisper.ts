@@ -169,7 +169,13 @@ export function useWhisper() {
         if (msg.jobId) {
           jobs.current.get(msg.jobId)?.reject(new Error(msg.message));
           jobs.current.delete(msg.jobId);
-          diarizeJobs.current.get(msg.jobId)?.reject(new Error(msg.message));
+          diarizeJobs.current
+            .get(msg.jobId)
+            ?.reject(
+              msg.oomMinutes != null
+                ? new MessageError({ key: "diarizeOom", params: { minutes: msg.oomMinutes } })
+                : new Error(msg.message),
+            );
           diarizeJobs.current.delete(msg.jobId);
         } else {
           setState((prev) => ({ ...prev, status: "error", error: msg.message }));

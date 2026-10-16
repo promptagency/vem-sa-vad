@@ -632,11 +632,8 @@ async function handle(msg: ToWorker): Promise<void> {
     post({
       type: "error",
       jobId: msg.jobId,
-      message: /^\d+$/.test(raw)
-        ? `Not enough memory for speaker separation, even in ${Math.round(
-            (windowSec * 2) / 60,
-          )}-minute chunks. A smaller Whisper model leaves more room for it.`
-        : raw,
+      message: raw,
+      ...(/^\d+$/.test(raw) && { oomMinutes: Math.round((windowSec * 2) / 60) }),
     });
     return;
   }

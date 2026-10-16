@@ -406,6 +406,8 @@ const sv = {
     diarizeTooLong: (p: { minutes: number; limit: number }) =>
       `Talaruppdelningen hoppades över: inspelningen är ${p.minutes} min, längre än gränsen på ${p.limit} min.`,
     diarizeFailed: (p: { detail: string }) => `Talaruppdelningen misslyckades: ${p.detail}`,
+    diarizeOom: (p: { minutes: number }) =>
+      `Talaruppdelningen misslyckades: minnet räckte inte, inte ens i bitar på ${p.minutes} minuter. En mindre Whisper-modell lämnar mer plats åt den.`,
     undecodable: () =>
       "Webbläsaren kunde inte avkoda ljudet i filen. Prova MP3, WAV, M4A, OGG, FLAC eller en MP4-, MOV- eller WebM-video.",
     podcastFetch: (p: { proxy: "none" | "status" | "unreachable"; detail: string }) =>
@@ -814,6 +816,8 @@ const en: Strings = {
     diarizeTooLong: (p) =>
       `Speaker separation skipped: recording is ${p.minutes} min, longer than the ${p.limit} min limit.`,
     diarizeFailed: (p) => `Speaker separation failed: ${p.detail}`,
+    diarizeOom: (p) =>
+      `Speaker separation failed: not enough memory, even in ${p.minutes}-minute chunks. A smaller Whisper model leaves more room for it.`,
     undecodable: () =>
       "This file's audio couldn't be decoded by the browser. Try MP3, WAV, M4A, OGG, FLAC, or an MP4/MOV/WebM video.",
     podcastFetch: (p) =>
