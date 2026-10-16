@@ -151,7 +151,7 @@ export function JobQueue({
 }) {
   const t = useT();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null);
 
   if (jobs.length === 0) return null;
 
@@ -168,11 +168,17 @@ export function JobQueue({
 
   async function copy(job: Job) {
     if (!job.result) return;
-    await navigator.clipboard.writeText(
-      toTxt(job.result, job.speakerNames, t.export).trim(),
-    );
-    setCopied(job.id);
-    window.setTimeout(() => setCopied((c) => (c === job.id ? null : c)), 1500);
+    let ok = true;
+    try {
+      // There's no clipboard on plain http (a self-hosted copy on a LAN address).
+      await navigator.clipboard.writeText(toTxt(job.result, job.speakerNames, t.export).trim());
+    } catch {
+      ok = false;
+    }
+    // Each click clears only its own note, never a newer one.
+    const note = { id: job.id, ok };
+    setCopied(note);
+    window.setTimeout(() => setCopied((c) => (c === note ? null : c)), ok ? 1500 : 4000);
   }
 
   return (
@@ -334,10 +340,12 @@ export function JobQueue({
                       onClick={() => copy(job)}
                       className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-neutral-300 hover:bg-white/5"
                     >
-                      {copied === job.id ? (
+                      {copied?.id === job.id && copied.ok ? (
                         <>
                           <Check className="size-3.5" /> {t.queue.copied}
                         </>
+                      ) : copied?.id === job.id ? (
+                        <span className="text-amber-300">{t.queue.copyFailed}</span>
                       ) : (
                         <>
                           <Copy className="size-3.5" /> {t.queue.copy}
