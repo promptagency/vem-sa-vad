@@ -10,9 +10,11 @@
 // threshold below it caught 10–11 of the misheard terms per transcript and
 // made no false suggestion in 4,200 words of ordinary Swedish prose, where a
 // looser 0.75 turned "ville", "vit" and "visste" into "Vite".
-// scripts/eval-glossary.mjs measures it on text: false suggestions in 40,000
-// words of prose, and hits on hand-made mishearings. Re-run it when matching
-// changes.
+// scripts/eval-glossary.mjs measures it on text (re-run it when matching
+// changes): in 40,000 words of Lagerlöf and the app's own text, the only
+// suggestions are "with the" → Vite from the book's English preface and
+// variants of a term the text itself uses ("Prompt Agencys"); it catches 18 of
+// 23 hand-made mishearings.
 import type { TranscriptChunk } from "./protocol";
 
 /** How alike (1 = identical) a stretch of words must sound to a term. */
@@ -286,9 +288,9 @@ function suggestIn(text: string, terms: Prepared[], maxWords: number): InLine[] 
     for (let length = 1; length <= maxWords && i + length <= words.length; length++) {
       const here = span(i, length);
       for (const term of terms) {
-        // Words more or fewer than the term are compared only one off, except a
-        // single word, which may be the whole term run together ("Vemsavad").
-        if (length !== 1 && (length < term.words - 1 || length > term.words + 1)) continue;
+        // At most one word more than the term; fewer words may be the term run
+        // together ("Vemsavad"), which the sound key, ignoring spaces, judges.
+        if (length > term.words + 1) continue;
         if (here.plain === term.plain) {
           // Spelled like the term already (perhaps in other case): leave it,
           // and don't let a looser match claim these words either.

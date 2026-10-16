@@ -73,8 +73,8 @@ reverted. Manual edits rewrite `job.result` (and rebuild its flat `text`), so ev
 (`src/lib/replace.ts`) changes many lines in one `onReplaceChunks` update, which its single-level Undo also uses.
 The word list (`settings.glossary`, one term per line) feeds `src/lib/glossary.ts`, which finds word sequences in
 the finished lines that *sound* like a term (a coarse sound key + bounded edit distance where two swapped letters
-count as one edit, threshold 0.85, an edge word only counts if it improves the match, a single word may match a
-longer term run together; measured with `scripts/eval-glossary.mjs` — re-run it when matching changes) and the review view offers them as suggestions — accepted per group or
+count as one edit, threshold 0.85, an edge word only counts if it improves the match, fewer words than the term may be
+it run together; measured with `scripts/eval-glossary.mjs` — re-run it when matching changes) and the review view offers them as suggestions — accepted per group or
 all at once through the same `onReplaceChunks` and Undo, never applied automatically. Feeding the list to Whisper
 as a prompt was measured and rejected (small gains, some words worse). The list is edited in `GlossaryDialog`
 (opened from Settings and the review panel; search, paste many, import/export `.txt`), and corrections offer new
