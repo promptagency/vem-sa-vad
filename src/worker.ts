@@ -608,14 +608,6 @@ async function handle(msg: ToWorker): Promise<void> {
     };
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
-        // Loaded apart from the run: a model that can't be fetched (offline)
-        // fails the same in a smaller window, so that's reported at once.
-        await ensureDiarizer();
-      } catch (err) {
-        lastError = err;
-        break;
-      }
-      try {
         post({
           type: "diarize-result",
           jobId: msg.jobId,
@@ -624,6 +616,9 @@ async function handle(msg: ToWorker): Promise<void> {
         return;
       } catch (err) {
         lastError = err;
+        // Offline, the speaker model can't be fetched in any window size:
+        // report it now rather than after three more tries.
+        if (!navigator.onLine) break;
         // An out-of-memory abort leaves the WASM runtime unusable, so the
         // retry needs a fresh session rather than the poisoned one.
         await disposeDiarizer();

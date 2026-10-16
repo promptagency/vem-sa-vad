@@ -80,6 +80,12 @@ test("Markdown shows the text literally", () => {
   assert.equal(odd.split("\n\n").slice(2).join("|"), "\\---|\\&copy; AT\\&T\n");
 });
 
+test("Markdown escapes every line of a paragraph, not just the first", () => {
+  // No timestamped chunks: the whole text is one paragraph, which may have line breaks.
+  const md = render({ text: "Intro\n---\nTitel\n===\n- punkt\n2. steg", chunks: [] }, "md", {}, { title: "T", timestamps: false, date: new Date(2026, 0, 2) });
+  assert.equal(md.split("\n\n").slice(2).join(""), "Intro\n\\---\nTitel\n\\===\n\\- punkt\n2\\. steg\n");
+});
+
 test("a silent recording gives subtitle files with no empty cue", () => {
   const silent = { text: " ", chunks: [] };
   assert.equal(toSrt(silent).trim(), "");

@@ -277,8 +277,9 @@ function escapeMarkdown(text: string): string {
     .replace(/([\\`*_[\]<>#|~&])/g, "\\$1") // & too, or "&copy;" shows as ©
     // "1994. Something", "1) …" or Whisper's subtitle-style "- Hej." at the
     // start of a paragraph would become a list item.
-    .replace(/^(\d+)([.)])/, "$1\\$2")
-    .replace(/^([-+])(?=[\s-]|$)/, "\\$1"); // and "---" would be a horizontal rule
+    // Every line, not just the first: text without timestamps can have several.
+    .replace(/^(\d+)([.)])/gm, "$1\\$2")
+    .replace(/^([-+=])(?=[\s=-]|$)/gm, "\\$1"); // and "---" / "===" would be a rule or a heading
 }
 
 /** YYYY-MM-DD in the user's own time zone (toISOString would give UTC's date). */
