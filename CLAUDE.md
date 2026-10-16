@@ -175,7 +175,10 @@ Worker fails the whole deploy; if the limiter errors at run time, the proxy fail
 files and is registered in production builds only. Check locally with `npx wrangler pages dev dist`.
 Pages rejects files over 25 MiB, so `vite.config.ts` drops the unused ONNX Runtime `.wasm` copy Vite would
 emit (Transformers.js loads the runtime from jsDelivr, which the CSP allows).
-Self-hosting on Apache still works: `public/.htaccess` forces HTTPS and adds an SPA fallback.
+Self-hosting on Apache still works: `public/.htaccess` forces HTTPS. There is no SPA fallback on either host —
+the app has no routes, and with relative paths a page served at `/some/path` loads its scripts from
+`/some/path/assets/` — so `public/404.html` (which also turns off Pages' own fallback) sends visitors to `/`,
+and Apache answers unknown paths with a plain 404.
 
 **Persistence (`src/lib/storage.ts`).** Keeping transcripts is **opt-in** (`settings.keepTranscripts`, off by
 default; a one-time card in `JobQueue` asks when the first job finishes, tracked by `keepTranscriptsAsked`).
