@@ -6,28 +6,12 @@ import { MessageError } from "./i18n";
 
 export const WHISPER_SAMPLE_RATE = 16000;
 
-// Extensions we advertise as supported. The real test is whether the browser
-// can decode the bytes — this list just drives the file picker / hints.
-export const AUDIO_EXTS = [
+// Extensions we advertise as supported (audio, then video). The real test is
+// whether the browser can decode the bytes — this list just drives the file picker.
+export const ACCEPTED_EXTS = [
   "mp3", "wav", "m4a", "aac", "ogg", "oga", "opus", "flac", "weba", "webm",
+  "mp4", "mov", "m4v", "mkv", "avi", "ogv",
 ];
-export const VIDEO_EXTS = ["mp4", "mov", "m4v", "webm", "mkv", "avi", "ogv"];
-export const ACCEPTED_EXTS = Array.from(
-  new Set([...AUDIO_EXTS, ...VIDEO_EXTS]),
-);
-
-export function extOf(name: string): string {
-  const i = name.lastIndexOf(".");
-  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
-}
-
-/** True if the file type/extension is one we advertise support for. */
-export function isLikelySupported(file: File): boolean {
-  if (file.type.startsWith("audio/") || file.type.startsWith("video/")) {
-    return true;
-  }
-  return ACCEPTED_EXTS.includes(extOf(file.name));
-}
 
 type AudioCtor = typeof AudioContext;
 

@@ -18,7 +18,7 @@ import {
   stitchWindows,
 } from "./lib/diarize";
 import { isEnglishOnly, type Backend, type Dtype } from "./lib/models";
-import { MODEL_CACHE, announceStorageChanged, pruneAfterLoad } from "./lib/modelStorage";
+import { MODEL_CACHE, SPEAKER_MODEL_ID, announceStorageChanged, pruneAfterLoad } from "./lib/modelStorage";
 import type {
   FileProgress,
   FromWorker,
@@ -57,8 +57,6 @@ const STRIDE_LENGTH_S = 2.5;
 // A tiny (~1.5 MB), separate model used only to detect *who* is speaking when.
 // It has nothing to do with Whisper and is loaded lazily, once, on WASM — it's
 // small enough that there's no need for the dtype/device tiers ASR gets.
-const DIARIZATION_MODEL_ID = "onnx-community/pyannote-segmentation-3.0";
-
 type DiarizationProcessor = Processor & {
   readonly sampling_rate: number;
 };
@@ -79,10 +77,10 @@ async function ensureDiarizer(): Promise<{
   if (diarizer) return diarizer;
   const [model, processor] = await Promise.all([
     AutoModelForAudioFrameClassification.from_pretrained(
-      DIARIZATION_MODEL_ID,
+      SPEAKER_MODEL_ID,
       { device: "wasm", dtype: "q8" },
     ),
-    AutoProcessor.from_pretrained(DIARIZATION_MODEL_ID),
+    AutoProcessor.from_pretrained(SPEAKER_MODEL_ID),
   ]);
   diarizer = { model, processor: processor as DiarizationProcessor };
   return diarizer;
@@ -515,7 +513,6 @@ async function handle(msg: ToWorker): Promise<void> {
       if (!pipe) throw new Error("Model is not loaded yet.");
       // Whatever the previous job left behind is dead weight now.
       retainedAudio = null;
-      post({ type: "transcribe-start", jobId: msg.jobId });
 
       const samplingRate =
         pipe.processor.feature_extractor?.config.sampling_rate ?? 16000;
@@ -619,6 +616,9 @@ async function handle(msg: ToWorker): Promise<void> {
         return;
       } catch (err) {
         lastError = err;
+        // Offline, the speaker model can't be fetched in any window size:
+        // report it now rather than after three more tries.
+        if (!navigator.onLine) break;
         // An out-of-memory abort leaves the WASM runtime unusable, so the
         // retry needs a fresh session rather than the poisoned one.
         await disposeDiarizer();

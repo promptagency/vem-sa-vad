@@ -5,15 +5,13 @@ import type { TranscriptResult } from "./protocol";
 // longer a download — it's what Copy gives (toTxt) — but JSON still builds on it.
 export type ExportFormat = "txt" | "md" | "srt" | "vtt" | "json";
 
-// The labels are for the developer benchmark page; the app shows its own (i18n).
-export const EXPORT_FORMATS: { value: ExportFormat; label: string; ext: string }[] =
-  [
-    { value: "txt", label: "Document (.txt)", ext: "txt" },
-    { value: "md", label: "Document (.md)", ext: "md" },
-    { value: "srt", label: "Subtitles (.srt)", ext: "srt" },
-    { value: "vtt", label: "WebVTT (.vtt)", ext: "vtt" },
-    { value: "json", label: "JSON (.json)", ext: "json" },
-  ];
+export const EXPORT_FORMATS: { value: ExportFormat; ext: string }[] = [
+  { value: "txt", ext: "txt" },
+  { value: "md", ext: "md" },
+  { value: "srt", ext: "srt" },
+  { value: "vtt", ext: "vtt" },
+  { value: "json", ext: "json" },
+];
 
 export function mimeFor(format: ExportFormat): string {
   switch (format) {
@@ -135,6 +133,8 @@ export function toTxt(
 function cuesFrom(result: TranscriptResult): TranscriptResult["chunks"] {
   const chunks = result.chunks?.filter((c) => c.text.trim().length > 0) ?? [];
   if (chunks.length > 0) return chunks;
+  // A silent recording has no cues: an empty one is rejected by strict players.
+  if (!result.text.trim()) return [];
   // No timestamps available — emit one cue spanning the whole text.
   return [{ text: result.text.trim(), timestamp: [0, null] }];
 }
@@ -274,11 +274,12 @@ function clockTime(seconds: number, withHours: boolean): string {
 /** Escape text so Markdown shows it literally instead of formatting it. */
 function escapeMarkdown(text: string): string {
   return text
-    .replace(/([\\`*_[\]<>#|~])/g, "\\$1")
+    .replace(/([\\`*_[\]<>#|~&])/g, "\\$1") // & too, or "&copy;" shows as ©
     // "1994. Something", "1) …" or Whisper's subtitle-style "- Hej." at the
     // start of a paragraph would become a list item.
-    .replace(/^(\d+)([.)])/, "$1\\$2")
-    .replace(/^([-+])(?=\s|$)/, "\\$1");
+    // Every line, not just the first: text without timestamps can have several.
+    .replace(/^(\d+)([.)])/gm, "$1\\$2")
+    .replace(/^([-+=])(?=[\s=-]|$)/gm, "\\$1"); // and "---" / "===" would be a rule or a heading
 }
 
 /** YYYY-MM-DD in the user's own time zone (toISOString would give UTC's date). */

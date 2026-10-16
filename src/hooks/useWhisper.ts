@@ -178,8 +178,6 @@ export function useWhisper() {
         }
         break;
       }
-      case "transcribe-start":
-        break;
     }
   }
 

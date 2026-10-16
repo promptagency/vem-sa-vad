@@ -33,10 +33,8 @@ function fmt(sec: number): string {
 
 export function Recorder({
   onRecorded,
-  disabled,
 }: {
   onRecorded: (blob: Blob, label: string) => void;
-  disabled?: boolean;
 }) {
   const t = useT();
   const [recording, setRecording] = useState(false);
@@ -225,8 +223,7 @@ export function Recorder({
       <button
         type="button"
         onClick={recording ? stop : start}
-        disabled={disabled}
-        className={`relative flex size-20 items-center justify-center rounded-full text-white shadow-lg transition disabled:opacity-50 ${
+        className={`relative flex size-20 items-center justify-center rounded-full text-white shadow-lg transition ${
           recording
             ? "rec-ring bg-red-500 hover:bg-red-600"
             : "bg-brand-500 hover:bg-brand-600"

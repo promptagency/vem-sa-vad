@@ -18,11 +18,9 @@ import { type Strings, formatMessage, messageOf, useT } from "../lib/i18n";
 
 export function PodcastPanel({
   proxyBase,
-  disabled,
   onEnqueue,
 }: {
   proxyBase: string;
-  disabled?: boolean;
   onEnqueue: (podcast: Podcast, episodes: Episode[]) => void;
 }) {
   const t = useT();
@@ -188,7 +186,7 @@ export function PodcastPanel({
 
             <button
               type="button"
-              disabled={disabled || selected.size === 0}
+              disabled={selected.size === 0}
               onClick={enqueue}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
             >

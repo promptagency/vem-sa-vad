@@ -144,7 +144,7 @@ text goes into both languages, never inline. Text that is stored and shown later
 `Message` (key + params, rendered by `formatMessage`), and libs throw `MessageError`, so it follows a language
 switch and survives in IndexedDB; plain strings (engine errors, older saves) still render as-is. Component
 state messages are kept as `(t) => string` for the same reason. Exports take `t.export` as `ExportLabels`
-("Talare 1"). English labels left in libs (`DTYPE_LABEL`, `LANGUAGES`, `EXPORT_FORMATS`) serve only the
+("Talare 1"). English labels left in libs (`DTYPE_LABEL`, `LANGUAGES`) serve only the
 English-only `bench.html`.
 
 **Exports (`src/lib/exporters.ts`, `src/lib/zip.ts`).** All formats are rendered from the one

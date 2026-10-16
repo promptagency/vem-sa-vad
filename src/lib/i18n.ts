@@ -336,6 +336,7 @@ const sv = {
     remove: "Ta bort",
     copy: "Kopiera",
     copied: "Kopierat",
+    copyFailed: "Webbläsaren tillåter inte kopiering här",
     livePreview: "Förhandsvisning · den färdiga transkriptionen kan skilja sig något",
     nameSpeakers: "Namnge talarna",
     namesHint:
@@ -745,6 +746,7 @@ const en: Strings = {
     remove: "Remove",
     copy: "Copy",
     copied: "Copied",
+    copyFailed: "The browser doesn’t allow copying here",
     livePreview: "Live preview · the finished transcript may differ slightly",
     nameSpeakers: "Name the speakers",
     namesHint:
