@@ -147,11 +147,14 @@ while (ob_get_level() > 0) {
 $status = 0;
 $upstreamType = '';
 $location = '';
+$length = '';        // upstream Content-Length, passed on when it describes the body as sent
+$encoding = '';      // upstream Content-Encoding (cURL decodes it, so the length no longer fits)
+$chunked = false;    // upstream Transfer-Encoding: chunked (its Content-Length doesn't count)
 $head = '';          // bytes held back until the content has been judged
 $decided = false;
 $refusal = null;     // [status, message] if the content was refused
 
-$send = function ($kind) use (&$upstreamType) {
+$send = function ($kind) use (&$upstreamType, &$length, &$encoding, &$chunked) {
     if ($kind === 'feed') {
         $type = 'application/xml';
         if (preg_match('/charset=([^;\s]+)/i', $upstreamType, $m)) $type .= '; charset=' . $m[1];
@@ -166,6 +169,14 @@ $send = function ($kind) use (&$upstreamType) {
     header('X-Content-Type-Options: nosniff');
     // Tells the app this response really comes from the proxy (see src/lib/podcasts.ts).
     header('X-Vem-Sa-Vad-Proxy: 1');
+    // With the length known, a transfer that breaks off (a timeout, a dropped
+    // upstream) ends short of it and the browser reports an error, instead of
+    // taking the first part of an episode for the whole of it.
+    // Not when PHP compresses its own output: the length would be the plain size.
+    if ($length !== '' && $encoding === '' && !$chunked
+        && !filter_var(ini_get('zlib.output_compression'), FILTER_VALIDATE_BOOLEAN) && ob_get_level() === 0) {
+        header('Content-Length: ' . $length);
+    }
 };
 
 $decide = function () use (&$head, &$decided, &$refusal, &$status, $send) {
@@ -195,6 +206,9 @@ for ($hop = 0; ; $hop++) {
     $status = 0;
     $upstreamType = '';
     $location = '';
+    $length = '';
+    $encoding = '';
+    $chunked = false;
 
     $ch = curl_init($url);
     curl_setopt_array($ch, array(
@@ -207,9 +221,20 @@ for ($hop = 0; ; $hop++) {
         CURLOPT_ENCODING       => '', // accept + transparently decode compression
         CURLOPT_USERAGENT      => 'VemSaVad-proxy/1.0 (+https://github.com/promptagency/vem-sa-vad)',
         CURLOPT_HTTPHEADER     => array('Accept: */*'),
-        CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$status, &$upstreamType, &$location) {
+        CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$status, &$upstreamType, &$location, &$length, &$encoding, &$chunked) {
             if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $m)) {
+                // A new response (after a 100 Continue): its own headers count.
                 $status = (int) $m[1];
+                $length = '';
+                $encoding = '';
+                $chunked = false;
+            } elseif (preg_match('#^Content-Length:\s*(\d+)\s*$#i', $header, $m)) {
+                $length = $m[1];
+            } elseif (stripos($header, 'Content-Encoding:') === 0) {
+                // Any value withholds the length, as in functions/proxy.php.ts.
+                $encoding = strtolower(trim(substr($header, 17)));
+            } elseif (preg_match('#^Transfer-Encoding:.*chunked#i', $header)) {
+                $chunked = true;
             } elseif (stripos($header, 'Content-Type:') === 0) {
                 $upstreamType = trim(substr($header, 13));
             } elseif (stripos($header, 'Location:') === 0) {
@@ -241,7 +266,8 @@ for ($hop = 0; ; $hop++) {
 
 // A short body never reached PEEK_BYTES: judge what arrived.
 if (!$decided && $refusal === null) {
-    if ($ok === false && $head === '') refuse(502, 'Upstream fetch failed: ' . $error);
+    // Failed part-way: say so, rather than pass on a fragment.
+    if ($ok === false) refuse(502, 'Upstream fetch failed: ' . $error);
     $decide();
 }
 if ($refusal !== null) refuse($refusal[0], $refusal[1]);
