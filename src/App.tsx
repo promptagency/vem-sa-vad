@@ -478,7 +478,9 @@ export default function App() {
               chunks: smoothSpeakers(assignSpeakers(result.chunks, activity)),
             };
           } catch (e) {
-            warning = { key: "diarizeFailed", params: { detail: String((e as Error)?.message ?? e) } };
+            // A failure that already has its own message (out of memory) keeps it.
+            const message = messageOf(e);
+            warning = typeof message === "string" ? { key: "diarizeFailed", params: { detail: message } } : message;
           }
         }
 
@@ -860,6 +862,10 @@ export default function App() {
             >
               <Download className="size-4" /> {t.settings.applyReload}
             </button>
+          )}
+          {/* A model, quality or backend chosen during a job loads after it (see drain). */}
+          {state.status === "ready" && !loadedForModel && activeJob && (
+            <p className="mt-4 text-sm text-neutral-400">{t.settings.changeAfterJob}</p>
           )}
         </Card>
       )}

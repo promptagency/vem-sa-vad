@@ -105,4 +105,8 @@ export type FromWorker =
   | { type: "result"; jobId: string; result: TranscriptResult }
   | { type: "diarize-progress"; jobId: string; progress: number }
   | { type: "diarize-result"; jobId: string; activity: SpeakerActivity[] }
-  | { type: "error"; jobId?: string; message: string };
+  /**
+   * `oomMinutes`: speaker separation ran out of memory even in chunks this long,
+   * so the page can say so in the interface language.
+   */
+  | { type: "error"; jobId?: string; message: string; oomMinutes?: number };
