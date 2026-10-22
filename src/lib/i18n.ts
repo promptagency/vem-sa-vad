@@ -40,9 +40,9 @@ const sv = {
     close: "Stäng",
     items: [
       {
-        q: "Adressen är vemsavad.promptagency.se. Betyder det att Prompt Agency sparar mina filer?",
+        q: "Prompt Agency står bakom Vem sa vad? Betyder det att Prompt Agency sparar mina filer?",
         a: [
-          "Nej. Adressen talar bara om varifrån själva appen hämtas: sidan, programkoden och ikonerna. Prompt Agency har byggt Vem sa vad? och står för driften, och därför ligger den under promptagency.se.",
+          "Nej. Adressen talar bara om varifrån själva appen hämtas: sidan, programkoden och ikonerna. Prompt Agency har byggt Vem sa vad? och står för driften.",
           "När sidan har laddats sker allt arbete i din webbläsare, på din egen dator. Ljudet och den färdiga texten skickas aldrig någonstans. Det finns ingen server som tar emot dem, och ingenting sparas hos Prompt Agency eller någon annan.",
           "Det som hämtas över nätet är sidan (via Cloudflare, som levererar den) och, första gången, transkriberingsmodellen (från Hugging Face) och beräkningsmotorn (från jsDelivr). Det som skickas är en anonym besöksräkning (se ”Räknar ni besök?”). Använder du poddfliken skickas också ditt sökord till Apples poddkatalog, som även levererar omslagsbilderna, och poddens flöde och avsnitt hämtas via sidans egen server, eftersom poddar sällan tillåter direkt hämtning. Det är offentligt ljud, och det transkriberas ändå på din dator. Som för alla webbplatser ser de här tjänsterna vanliga anslutningsuppgifter, till exempel din IP-adress, men aldrig dina filer eller din text.",
         ],
@@ -456,9 +456,9 @@ const en: Strings = {
     close: "Close",
     items: [
       {
-        q: "The address is vemsavad.promptagency.se. Does that mean Prompt Agency stores my files?",
+        q: "Prompt Agency is behind Vem sa vad? Does that mean Prompt Agency stores my files?",
         a: [
-          "No. The address only says where the app itself is loaded from: the page, its code and its icons. Prompt Agency built Vem sa vad? and runs it, which is why it lives under promptagency.se.",
+          "No. The address only says where the app itself is loaded from: the page, its code and its icons. Prompt Agency built Vem sa vad? and runs it.",
           "Once the page has loaded, all the work happens in your browser, on your own computer. The audio and the finished text are never sent anywhere. There is no server that receives them, and nothing is stored by Prompt Agency or anyone else.",
           "What is fetched over the network is the page (via Cloudflare, which delivers it) and, the first time, the transcription model (from Hugging Face) and the compute engine (from jsDelivr). What is sent is an anonymous visit count (see “Do you count visits?”). If you use the Podcast tab, your search term is also sent to Apple’s podcast directory, which also supplies the cover images, and the podcast’s feed and episodes are fetched through the site’s own server, because podcast hosts rarely allow direct downloads. That is public audio, and it is still transcribed on your computer. As with any website, these services see ordinary connection details such as your IP address, but never your files or your text.",
         ],

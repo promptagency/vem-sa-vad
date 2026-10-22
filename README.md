@@ -5,7 +5,7 @@
 Private audio and video transcription that runs **in your browser** and tells you **who said what**.
 Nothing is uploaded and nothing needs to be installed — just open the page.
 
-**Use it now: [vemsavad.promptagency.se](https://vemsavad.promptagency.se)** — open it in Chrome or
+**Use it now: [vemsavad.app](https://vemsavad.app)** — open it in Chrome or
 Edge and drop in a file. Click *Install* in the address bar to get it as an app with its own window,
 which also opens without a network.
 

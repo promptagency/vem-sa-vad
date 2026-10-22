@@ -122,7 +122,7 @@ open tab's list stays current; a tab that loads while another removes simply dow
 
 **Visit counting (`src/lib/analytics.ts`).** `countVisit()` in `main.tsx` POSTs one page view to Prompt
 Agency's Plausible (`plausible.app.promptagency.se`, allowed in the CSP's `connect-src`) — our own code, not
-Plausible's script, so no outside code runs on the page. Only on `vemsavad.promptagency.se`; skipped for
+Plausible's script, so no outside code runs on the page. Only on `vemsavad.app`; skipped for
 GPC/Do Not Track, automated browsers and browsers flagged with `?plausible_ignore=true` (localStorage, as in
 Plausible's own script); only `utm_*` query parameters are kept. Never send audio, text, file
 names or in-app actions, and keep the FAQ's "Räknar ni besök?" in step with any change.
@@ -165,7 +165,7 @@ the `devPodcastProxy` plugin in `vite.config.ts` serves `/proxy.php` by running 
 itself, so dev has the hosted proxy's rules (`apply: 'serve'`, so not in preview).
 
 **Deployment.** Public site: Cloudflare Pages (`wrangler.toml`), deployed from `main`, custom domain
-`vemsavad.promptagency.se` (CNAME at Loopia → the `pages.dev` address). `public/_headers` sets COOP/COEP and a
+`vemsavad.app`; the old `vemsavad.promptagency.se` (CNAME at Loopia) 301-redirects to it in Cloudflare. `public/_headers` sets COOP/COEP and a
 strict CSP — any new outside host the app talks to must be added there or it is blocked; podcasts therefore go
 through the proxy first. `functions/proxy.php.ts` is the Pages version of `proxy.php` (same-origin callers,
 feeds/media only, 30 requests a minute per visitor through the `workers/limiter` Worker and the `LIMITER`

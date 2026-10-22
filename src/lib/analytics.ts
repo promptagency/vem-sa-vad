@@ -11,7 +11,7 @@
 
 const PLAUSIBLE = "https://plausible.app.promptagency.se";
 /** The site's name in Plausible, and the only address that is counted. */
-const SITE = "vemsavad.promptagency.se";
+const SITE = "vemsavad.app";
 
 const IGNORE_KEY = "plausible_ignore";
 

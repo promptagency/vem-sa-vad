@@ -1,4 +1,4 @@
-# Cloudflare Pages configuration for the hosted site (vemsavad.promptagency.se).
+# Cloudflare Pages configuration for the hosted site (vemsavad.app; vemsavad.promptagency.se 301-redirects to it in Cloudflare).
 # Build command `npm run build`, output `dist/`; `functions/` holds the podcast proxy.
 # Local check of the hosted setup: `npm run build && npx wrangler pages dev dist`.
 name = "vem-sa-vad"

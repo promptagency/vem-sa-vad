@@ -89,6 +89,6 @@ happens to send CORS headers. In development, `npm run dev` serves a stand-in fo
 `src/lib/analytics.ts` sends one anonymous page view per load to Prompt Agency's self-hosted Plausible
 (Hetzner, Finland), using a few lines of our own code rather than Plausible's script. It sends the page
 address with only `utm_*` kept, the referring page's origin and path, and the site name; no cookies,
-nothing stored. It only runs on `vemsavad.promptagency.se` — never on previews, localhost or your own
+nothing stored. It only runs on `vemsavad.app` — never on previews, localhost or your own
 copy — and not when the browser sends Global Privacy Control or Do Not Track. To leave your own browser
 out, open the site once with `?plausible_ignore=true` (`=false` undoes it).
