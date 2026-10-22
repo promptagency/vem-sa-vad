@@ -121,7 +121,8 @@ when files really go to that Cache Storage. Removals and prunes are announced on
 open tab's list stays current; a tab that loads while another removes simply downloads again.
 
 **Visit counting (`src/lib/analytics.ts`).** `countVisit()` in `main.tsx` POSTs one page view to Prompt
-Agency's Plausible (`plausible.app.promptagency.se`, allowed in the CSP's `connect-src`) — our own code, not
+Agency's Plausible through `/api/event` on our own origin (`functions/api/event.ts` forwards it, so the CSP names
+no analytics host) — our own code, not
 Plausible's script, so no outside code runs on the page. Only on `vemsavad.app`; skipped for
 GPC/Do Not Track, automated browsers and browsers flagged with `?plausible_ignore=true` (localStorage, as in
 Plausible's own script); only `utm_*` query parameters are kept. Never send audio, text, file

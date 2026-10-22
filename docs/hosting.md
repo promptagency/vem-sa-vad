@@ -14,7 +14,8 @@ merge (feature branches get preview addresses). Settings live in `wrangler.toml`
 
 - **`public/_headers`** sends cross-origin isolation (which makes the CPU fallback multithreaded) and a
   strict **Content-Security-Policy**: the page may only connect to itself, Hugging Face (models),
-  jsDelivr (the ONNX runtime), Apple's podcast search and Prompt Agency's Plausible. The browser
+  jsDelivr (the ONNX runtime) and Apple's podcast search; the visit count goes to the site itself
+  (`functions/api/event.ts` forwards it to Prompt Agency's Plausible). The browser
   enforces it, so "nothing is uploaded" can be checked, not just trusted. Change it deliberately: any
   new outside host the app talks to must be added there or it is blocked.
 - **`public/404.html`** answers paths that aren't files and sends visitors to the start page. Its presence

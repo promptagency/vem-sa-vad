@@ -6,10 +6,9 @@
 // type from the request itself, stores no IP address and sets no cookies.
 // Audio, text, file names and what you do in the app are never sent.
 //
-// The CSP's connect-src must allow PLAUSIBLE (public/_headers), and the FAQ
-// describes this — keep both in step with any change here.
+// It goes to /api/event on this origin, which functions/api/event.ts forwards
+// to Plausible, so the CSP names no analytics host. The FAQ describes this — keep both in step with any change here.
 
-const PLAUSIBLE = "https://plausible.app.promptagency.se";
 /** The site's name in Plausible, and the only address that is counted. */
 const SITE = "vemsavad.app";
 
@@ -72,10 +71,8 @@ export function countVisit(): void {
   // First, so ?plausible_ignore=… is remembered even when another rule already skips this visit.
   const ignored = ignoredBrowser();
   if (location.hostname !== SITE || ignored || optedOut() || navigator.webdriver) return;
-  void fetch(`${PLAUSIBLE}/api/event`, {
+  void fetch("/api/event", {
     method: "POST",
-    // text/plain keeps it a simple request (no CORS preflight).
-    headers: { "Content-Type": "text/plain" },
     keepalive: true,
     body: JSON.stringify({ n: "pageview", u: pageAddress(), d: SITE, r: referrerPage() }),
   }).catch(() => {
