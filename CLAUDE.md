@@ -165,7 +165,7 @@ fetched directly and fall back to the same-origin `public/proxy.php` (PHP + cURL
 the `devPodcastProxy` plugin in `vite.config.ts` serves `/proxy.php` by running `functions/proxy.php.ts`
 itself, so dev has the hosted proxy's rules (`apply: 'serve'`, so not in preview).
 
-**Deployment.** Public site: Cloudflare Pages (`wrangler.toml`), deployed from `main`, custom domain
+**Deployment.** Public site: Cloudflare Pages (`wrangler.toml`), deployed from `main` (`dev` gets a Pages preview), custom domain
 `vemsavad.app`; the old `vemsavad.promptagency.se` (CNAME at Loopia) 301-redirects to it in Cloudflare. `public/_headers` sets COOP/COEP and a
 strict CSP — any new outside host the app talks to must be added there or it is blocked; podcasts therefore go
 through the proxy first. `functions/proxy.php.ts` is the Pages version of `proxy.php` (same-origin callers,
@@ -198,11 +198,15 @@ for errors and amber for unsure lines stay. Use these tokens rather than Tailwin
 
 ## Repository conventions
 
+- **Branches: `main` is live, `dev` is where work happens.** Every merge to `main` deploys the public site, so
+  nothing is committed to `main` directly: all work lands on `dev`, and `dev` moves to `main` through one PR
+  (`dev` → `main`, merged with a merge commit) only once everything on it checks out — CI green and the `dev`
+  preview tested in the browser.
 - `origin` = `promptagency/vem-sa-vad` (the fork). **Every feature is developed on its own branch**
-  (`feature/<name>`), with commits that touch only that feature, and lands on `main` through a PR in this fork.
-  Keeping features apart means any one of them can be offered upstream without untangling it from others.
-  Small fixes (docs, typos, an isolated bug fix) may go straight to `main`.
-- **Before a feature branch is merged** (into `main`, or offered upstream), always:
+  (`feature/<name>`, cut from `dev`), with commits that touch only that feature, and lands on `dev` through a PR
+  in this fork. Keeping features apart means any one of them can be offered upstream without untangling it from
+  others. Small fixes (docs, typos, an isolated bug fix) may go straight to `dev`.
+- **Before a feature branch is merged** (into `dev`, or offered upstream), always:
   1. **Test edge cases in the browser**, not just the happy path: the feature with speaker separation on *and*
      off, several jobs in the queue (state must not leak between them), empty/cleared input, odd characters
      (`Åsa "Q" <b>&` must render as text), collapse/reopen, every export format including the multi-format zip,
@@ -231,21 +235,21 @@ for errors and amber for unsure lines stay. Use these tokens rather than Tailwin
 - The README is for users first, then self-hosters and developers: features, privacy, getting started and
   short summaries. Technical detail goes in `docs/` (`hosting.md`, `speaker-separation.md`,
   `architecture.md`, `benchmark.md`, …), linked from the README.
-- **Releases:** bump `package.json` with `npm version <x.y.z> --no-git-tag-version`, merge that to `main`,
-  then tag `main` as `v<x.y.z>` and push the tag. `.github/workflows/release.yml` refuses a tag that isn't on
+- **Releases:** bump `package.json` with `npm version <x.y.z> --no-git-tag-version` on `dev`, promote `dev` to
+  `main`, then tag `main` as `v<x.y.z>` and push the tag. `.github/workflows/release.yml` refuses a tag that isn't on
   `main` or doesn't match `package.json`, typechecks, builds (in a read-only job), and publishes a GitHub Release
   (in a separate job that installs nothing) with the site zipped (`vem-sa-vad-v<x.y.z>.zip`, for self-hosters)
   and notes generated from merged PRs; an optional `.github/release-notes/v<x.y.z>.md` becomes the
   introduction. A tag with a suffix (`v1.1.0-rc.1`) becomes a pre-release, never "latest". The footer shows
   `package.json`'s version (`__APP_VERSION__`, put in by `vite.config.ts`), linking to the releases list. The
-  live site deploys every merge, so it shows whatever `package.json` says: merge the version bump right before
+  live site deploys every merge, so it shows whatever `package.json` says: promote the version bump right before
   tagging, and expect features merged since the last release to show under the old number until the next bump. The public site doesn't wait for releases —
-  it deploys from every merge to `main`.
-- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs on Mondays: npm minor/patch updates grouped
+  it deploys from every merge to `main`, i.e. every promotion from `dev`.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs against `dev` on Mondays: npm minor/patch updates grouped
   into `app` and `dev-tooling`, majors one by one, GitHub Actions together. `@huggingface/transformers` and
   `onnxruntime-*` come as their own `model-runtime` group: those need the `overrides` pin moved by hand and
   a browser re-test (GPU, CPU, speaker separation) before merging. `.github/workflows/ci.yml` typechecks and
-  builds every PR (Dependabot's too) and every push to `main`. A green check only means it compiles and
+  builds every PR (Dependabot's too) and every push to `main` and `dev`. A green check only means it compiles and
   bundles — it never runs a model, so a `model-runtime` PR is not ready until it's been tested in the browser.
 - Parked work lives on branches: `feature/pianissimo` (Klang AI's Pianissimo model, WebGPU-only, self-hosted
   765 MB), `spike/pianissimo` (its benchmark harness and findings) and `spike/multi-speaker` (more than 3
