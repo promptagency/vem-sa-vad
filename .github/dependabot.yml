@@ -1,5 +1,6 @@
 # Dependabot: weekly update PRs for npm packages and the GitHub Actions used here.
 # Every PR is reviewed and tested like any other change; nothing merges itself.
+# PRs target dev, like all work; they reach main (live) with the next promotion.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +10,7 @@ updates:
       day: monday
       time: "06:00"
       timezone: Europe/Stockholm
+    target-branch: dev
     open-pull-requests-limit: 5
     commit-message:
       prefix: deps
@@ -38,6 +40,7 @@ updates:
       day: monday
       time: "06:00"
       timezone: Europe/Stockholm
+    target-branch: dev
     commit-message:
       prefix: ci
     groups:

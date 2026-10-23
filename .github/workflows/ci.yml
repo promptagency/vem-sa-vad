@@ -1,5 +1,5 @@
 # Typecheck and build every pull request (Dependabot's included) and every
-# push to main. There is no test runner (see CLAUDE.md), so this only proves
+# push to main and dev. There is no test runner (see CLAUDE.md), so this only proves
 # the code compiles and bundles: anything touching transcription — and every
 # model-runtime update — still needs a browser test.
 name: CI
@@ -7,7 +7,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
