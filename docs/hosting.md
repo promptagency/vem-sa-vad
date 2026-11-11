@@ -77,7 +77,7 @@ follow the same rules:
   and headers that stop it from ever running as a page.
 - **Only this site's own pages** may call it; requests from other sites' pages are refused.
 - **No private or reserved addresses**, re-checked on every redirect (the PHP version also pins the
-  connection to the checked address).
+  connection to the checked address). Only ports 80 and 443, and no user name or password in the URL.
 - **A limited rate** per visitor on Cloudflare (see `workers/limiter/` above); the PHP version has
   none, so use your server's own tools if you need one.
 
