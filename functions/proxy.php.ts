@@ -5,7 +5,8 @@
 // send CORS headers. Transcription still happens entirely in the browser — this
 // only moves podcast bytes. Because it's on the public internet it passes
 // podcast content and nothing else:
-//   • only GET, only http(s), never local or private-looking hosts;
+//   • only GET, only http(s) on ports 80 and 443, no user name or password
+//     in the URL, never local or private-looking hosts;
 //   • never requests that browsers mark as coming from another site or typed
 //     into the address bar (Sec-Fetch-Site other than same-origin; a missing
 //     header is allowed, as older Safari and plain-http pages send none) —
@@ -23,8 +24,25 @@
 //   • responses are marked X-Vem-Sa-Vad-Proxy, so the app can tell the proxy
 //     from a static host that merely serves a file called proxy.php.
 
-const PRIVATE_HOST =
-  /^(localhost|.*\.local|.*\.internal|0\.0\.0\.0|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+|\[.*\])$/i;
+/** IPv4 ranges never fetched: "this network", private, shared, loopback, link-local, benchmark, multicast, reserved. */
+const BLOCKED_V4: [base: number, bits: number][] = [
+  [0x00000000, 8], [0x0a000000, 8], [0x64400000, 10], [0x7f000000, 8], [0xa9fe0000, 16],
+  [0xac100000, 12], [0xc0a80000, 16], [0xc6120000, 15], [0xe0000000, 4], [0xf0000000, 4],
+];
+
+/**
+ * Local names, IPv6 literals and blocked IPv4 ranges. The URL parser has already
+ * turned 2130706433, 0x7f.1 and the like into dotted decimal. Names that resolve
+ * to a private address can't be seen here (the PHP version checks the address).
+ */
+function blockedHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.+$/, ""); // "localhost." is localhost
+  if (host.startsWith("[") || /^(localhost|.+\.localhost|.+\.local|.+\.internal)$/.test(host)) return true;
+  const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
+  if (!m) return false;
+  const ip = ((+m[1] << 24) | (+m[2] << 16) | (+m[3] << 8) | +m[4]) >>> 0;
+  return BLOCKED_V4.some(([base, bits]) => (ip ^ base) >>> (32 - bits) === 0);
+}
 
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
@@ -191,7 +209,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return refuse(400, "Only http/https URLs are allowed");
     }
-    if (PRIVATE_HOST.test(url.hostname)) return refuse(403, "Blocked host");
+    // fetch() would send these on as a login to the podcast host.
+    if (url.username || url.password) return refuse(400, "URLs with a user name or password are not allowed");
+    if (url.port && url.port !== "80" && url.port !== "443") return refuse(400, "Only ports 80 and 443 are allowed");
+    if (blockedHost(url.hostname)) return refuse(403, "Blocked host");
     try {
       upstream = await fetch(url.toString(), {
         redirect: "manual",
@@ -226,7 +247,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const upstreamType = upstream.headers.get("Content-Type") ?? "";
   let type: string;
   if (kind === "feed") {
-    const charset = /charset=([^;\s]+)/i.exec(upstreamType)?.[1];
+    const charset = /charset="?([\w.:-]+)/i.exec(upstreamType)?.[1]; // a bare label, never quotes
     type = charset ? `application/xml; charset=${charset}` : "application/xml";
   } else {
     type = /^(audio|video)\/[\w.+-]+$/i.test(upstreamType.split(";")[0].trim())
