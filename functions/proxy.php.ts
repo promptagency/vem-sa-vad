@@ -24,10 +24,15 @@
 //   • responses are marked X-Vem-Sa-Vad-Proxy, so the app can tell the proxy
 //     from a static host that merely serves a file called proxy.php.
 
-/** IPv4 ranges never fetched: "this network", private, shared, loopback, link-local, benchmark, multicast, reserved. */
+/**
+ * IPv4 ranges never fetched: "this network", private, shared, loopback, link-local,
+ * IETF and documentation nets, benchmark, multicast, reserved. proxy.php blocks the
+ * same set (filter_var() plus its own list, so it doesn't depend on the PHP version).
+ */
 const BLOCKED_V4: [base: number, bits: number][] = [
   [0x00000000, 8], [0x0a000000, 8], [0x64400000, 10], [0x7f000000, 8], [0xa9fe0000, 16],
-  [0xac100000, 12], [0xc0a80000, 16], [0xc6120000, 15], [0xe0000000, 4], [0xf0000000, 4],
+  [0xac100000, 12], [0xc0000000, 24], [0xc0000200, 24], [0xc0a80000, 16], [0xc6120000, 15],
+  [0xc6336400, 24], [0xcb007100, 24], [0xe0000000, 4], [0xf0000000, 4],
 ];
 
 /**

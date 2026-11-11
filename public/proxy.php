@@ -100,7 +100,9 @@ const MAX_REDIRECTS = 5;
 function in_extra_blocked_range($ip) {
     $n = ip2long($ip);
     if ($n === false) return false;
-    foreach (array('0.0.0.0/8', '100.64.0.0/10', '198.18.0.0/15', '224.0.0.0/4', '240.0.0.0/4') as $cidr) {
+    $ranges = array('0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15',
+        '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/4', '240.0.0.0/4');
+    foreach ($ranges as $cidr) {
         list($base, $bits) = explode('/', $cidr);
         if ((($n ^ ip2long($base)) & (-1 << (32 - (int) $bits))) === 0) return true;
     }
