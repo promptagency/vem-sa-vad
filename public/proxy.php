@@ -8,8 +8,8 @@
  * host sends CORS headers (most don't), so this script fetches it server-side
  * and streams it back. Transcription still happens entirely in the browser —
  * this only moves podcast bytes, and nothing else:
- *   - only GET over http(s), and never hosts resolving to private or reserved
- *     addresses — checked again for every redirect, with the connection pinned
+ *   - only GET over http(s) on ports 80 and 443, no user name or password in
+ *     the URL, and never hosts resolving to private or reserved addresses — checked again for every redirect, with the connection pinned
  *     to the address that was checked (so DNS can't swap it in between);
  *   - never requests that browsers mark as coming from another site or typed
  *     into the address bar (Sec-Fetch-Site other than same-origin; a missing
@@ -94,6 +94,22 @@ if ($url === '') refuse(400, 'Missing url parameter');
 const MAX_REDIRECTS = 5;
 
 /**
+ * IPv4 ranges that filter_var()'s private/reserved flags don't block in every PHP
+ * version; functions/proxy.php.ts blocks them too. IPv6 is left to filter_var().
+ */
+function in_extra_blocked_range($ip) {
+    $n = ip2long($ip);
+    if ($n === false) return false;
+    $ranges = array('0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15',
+        '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/4', '240.0.0.0/4');
+    foreach ($ranges as $cidr) {
+        list($base, $bits) = explode('/', $cidr);
+        if ((($n ^ ip2long($base)) & (-1 << (32 - (int) $bits))) === 0) return true;
+    }
+    return false;
+}
+
+/**
  * Check a URL and resolve its host; returns [scheme, host, port, ip] or refuses.
  * Every address the name resolves to must be public, and the connection is
  * later pinned to the first one.
@@ -105,6 +121,9 @@ function checked_target($url) {
     if ($scheme !== 'http' && $scheme !== 'https') refuse(400, 'Only http/https URLs are allowed');
     $host = trim($parts['host'], '[]');
     $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+    // curl would send these on as a login to the podcast host.
+    if (isset($parts['user']) || isset($parts['pass'])) refuse(400, 'URLs with a user name or password are not allowed');
+    if ($port !== 80 && $port !== 443) refuse(400, 'Only ports 80 and 443 are allowed');
 
     $ips = array();
     if (filter_var($host, FILTER_VALIDATE_IP)) {
@@ -121,7 +140,7 @@ function checked_target($url) {
     }
     if (empty($ips)) refuse(502, 'DNS resolution failed');
     foreach ($ips as $ip) {
-        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) || in_extra_blocked_range($ip)) {
             refuse(403, 'Blocked private/reserved address');
         }
     }

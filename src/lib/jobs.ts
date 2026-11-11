@@ -123,6 +123,28 @@ export function jobProgress(job: Job): number {
   return (index + job.stageProgress) / stages.length;
 }
 
+/**
+ * A stored result in the shape the review view and exports rely on. Storage isn't
+ * type-checked, so a damaged or older record may lack text, chunks or timestamps.
+ */
+function repairResult(raw: TranscriptResult): TranscriptResult {
+  const r: Partial<TranscriptResult> = raw ?? {};
+  const finite = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const chunks = (Array.isArray(r.chunks) ? r.chunks : [])
+    .filter((c) => c != null && typeof c === "object")
+    .map((c) => {
+      const [start, end] = Array.isArray(c.timestamp) ? c.timestamp : [];
+      return {
+        ...c,
+        text: typeof c.text === "string" ? c.text : "",
+        timestamp: [finite(start) ?? 0, finite(end)] as [number, number | null],
+      };
+    });
+  // Without its flat text, rebuild it from the lines, as an edit does (App.tsx).
+  const text = typeof r.text === "string" ? r.text : chunks.map((c) => c.text).join("");
+  return { ...r, text, chunks };
+}
+
 /** A finished job rebuilt from storage. It has no media, so nothing can re-run it. */
 export function jobFromSaved(saved: SavedTranscript): Job {
   return {
@@ -131,7 +153,7 @@ export function jobFromSaved(saved: SavedTranscript): Job {
     source: saved.source,
     status: "done",
     stageProgress: 1,
-    result: saved.result,
+    result: repairResult(saved.result),
     error: null,
     warning: saved.warning,
     willDiarize: false,
@@ -140,7 +162,7 @@ export function jobFromSaved(saved: SavedTranscript): Job {
     getMedia: () =>
       Promise.reject(new Error("The original audio isn't kept after a reload.")),
     media: null,
-    originalResult: saved.originalResult,
+    originalResult: saved.originalResult && repairResult(saved.originalResult),
     restored: true,
   };
 }
