@@ -169,7 +169,9 @@ export function toSrt(
     cues
       .map((c, i) => {
         const [start, end] = cueSpan(c);
-        return `${i + 1}\n${stamp(start, ",")} --> ${stamp(end, ",")}\n${cueText(withSpeaker(c, names, labels))}\n`;
+        // SRT has no escaping, and a "-->" in the text reads as a timing line.
+        const text = cueText(withSpeaker(c, names, labels)).replaceAll("-->", "->");
+        return `${i + 1}\n${stamp(start, ",")} --> ${stamp(end, ",")}\n${text}\n`;
       })
       .join("\n") + "\n"
   );
@@ -296,9 +298,10 @@ function escapeMarkdown(text: string): string {
     // "1994. Something", "1) …" or Whisper's subtitle-style "- Hej." at the
     // start of a paragraph would become a list item.
     // Every line, not just the first: text without timestamps can have several.
-    // Up to three leading spaces still make a list item, so they're allowed for.
-    .replace(/^([ \t]*)(\d+)([.)])/gm, "$1$2\\$3")
-    .replace(/^([ \t]*)([-+=])(?=[\s=-]|$)/gm, "$1\\$2"); // and "---" / "===" would be a rule or a heading
+    // Up to three leading spaces still make a list item; four or a tab is a code
+    // block, where a backslash would show.
+    .replace(/^( {0,3})(\d+)([.)])/gm, "$1$2\\$3")
+    .replace(/^( {0,3})([-+=])(?=[\s=-]|$)/gm, "$1\\$2"); // and "---" / "===" would be a rule or a heading
 }
 
 /** YYYY-MM-DD in the user's own time zone (toISOString would give UTC's date). */
