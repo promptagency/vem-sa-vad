@@ -42,7 +42,7 @@ export function extFor(format: ExportFormat): string {
 export function safeFileName(name: string): string {
   const cleaned = name
     .replace(/[/\\:*?"<>|]+/g, "-")
-    .replace(/[\u0000-\u001f]/g, "")
+    .replace(/\p{Cc}/gu, "") // all control characters, DEL and C1 included
     // No leading dot (a hidden file) or trailing one (".." before the extension).
     .replace(/^[\s.]+|[\s.]+$/g, "");
   return cleaned || "transcript";
@@ -54,12 +54,12 @@ function pad(n: number, width = 2): string {
 
 /** Format seconds as HH:MM:SS,mmm (SRT) or HH:MM:SS.mmm (VTT). */
 function stamp(seconds: number, msSep: "," | "."): string {
-  const s = Math.max(0, seconds || 0);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = Math.floor(s % 60);
-  const ms = Math.round((s - Math.floor(s)) * 1000);
-  return `${pad(h)}:${pad(m)}:${pad(sec)}${msSep}${pad(ms, 3)}`;
+  // Whole milliseconds first, so 59.9996 s becomes 00:01:00,000, not 00:00:59,1000.
+  const total = Number.isFinite(seconds) ? Math.max(0, Math.round(seconds * 1000)) : 0;
+  const h = Math.floor(total / 3_600_000);
+  const m = Math.floor(total / 60_000) % 60;
+  const sec = Math.floor(total / 1000) % 60;
+  return `${pad(h)}:${pad(m)}:${pad(sec)}${msSep}${pad(total % 1000, 3)}`;
 }
 
 /** Names the user gave a transcript's speakers, keyed by speaker number. */
@@ -139,6 +139,26 @@ function cuesFrom(result: TranscriptResult): TranscriptResult["chunks"] {
   return [{ text: result.text.trim(), timestamp: [0, null] }];
 }
 
+/** A cue's start and end: finite, never negative, and never ending before it starts. */
+function cueSpan(c: TranscriptResult["chunks"][number]): [number, number] {
+  const [rawStart, rawEnd] = c.timestamp;
+  const start = Number.isFinite(rawStart) ? Math.max(0, rawStart) : 0;
+  const end = rawEnd != null && Number.isFinite(rawEnd) ? rawEnd : start + 2;
+  return [start, Math.max(start, end)];
+}
+
+/** Cue text without blank lines: players end a cue at the first one. */
+function cueText(text: string): string {
+  return text
+    .split(/\r\n|\r|\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** VTT cue text is markup: "<b>" would turn bold and "-->" read as a timing line. */
+const escapeVtt = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export function toSrt(
   result: TranscriptResult,
   names: SpeakerNames = {},
@@ -148,9 +168,8 @@ export function toSrt(
   return (
     cues
       .map((c, i) => {
-        const start = c.timestamp[0] ?? 0;
-        const end = c.timestamp[1] ?? start + 2;
-        return `${i + 1}\n${stamp(start, ",")} --> ${stamp(end, ",")}\n${withSpeaker(c, names, labels)}\n`;
+        const [start, end] = cueSpan(c);
+        return `${i + 1}\n${stamp(start, ",")} --> ${stamp(end, ",")}\n${cueText(withSpeaker(c, names, labels))}\n`;
       })
       .join("\n") + "\n"
   );
@@ -164,9 +183,8 @@ export function toVtt(
   const cues = cuesFrom(result);
   const body = cues
     .map((c) => {
-      const start = c.timestamp[0] ?? 0;
-      const end = c.timestamp[1] ?? start + 2;
-      return `${stamp(start, ".")} --> ${stamp(end, ".")}\n${withSpeaker(c, names, labels)}\n`;
+      const [start, end] = cueSpan(c);
+      return `${stamp(start, ".")} --> ${stamp(end, ".")}\n${escapeVtt(cueText(withSpeaker(c, names, labels)))}\n`;
     })
     .join("\n");
   return `WEBVTT\n\n${body}\n`;
@@ -278,8 +296,9 @@ function escapeMarkdown(text: string): string {
     // "1994. Something", "1) …" or Whisper's subtitle-style "- Hej." at the
     // start of a paragraph would become a list item.
     // Every line, not just the first: text without timestamps can have several.
-    .replace(/^(\d+)([.)])/gm, "$1\\$2")
-    .replace(/^([-+=])(?=[\s=-]|$)/gm, "\\$1"); // and "---" / "===" would be a rule or a heading
+    // Up to three leading spaces still make a list item, so they're allowed for.
+    .replace(/^([ \t]*)(\d+)([.)])/gm, "$1$2\\$3")
+    .replace(/^([ \t]*)([-+=])(?=[\s=-]|$)/gm, "$1\\$2"); // and "---" / "===" would be a rule or a heading
 }
 
 /** YYYY-MM-DD in the user's own time zone (toISOString would give UTC's date). */
