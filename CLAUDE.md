@@ -30,6 +30,15 @@ commands there (`npx node@22 …`), not only on a newer local Node. There is no 
 `npm run typecheck` / `npm run build`, and in the browser for anything touching transcription (Chrome/Edge for
 WebGPU).
 
+`tests/robustness.test.ts` is the robustness contract: rules every input must follow (recording length, feed
+durations and decoding, restored transcripts, `diarize.ts`, every export format, file names, the ZIP writer, the
+Pages podcast proxy's SSRF rules), checked on hand-written cases in `tests/fuzz/cases.ts` and 2,000 seeded random
+inputs per target. Add a line to `cases.ts` when a new edge case turns up. `node .claude/hooks/loop.mjs start` arms
+a fix loop (from promptagency/silar): while armed, the Stop hook won't let Claude stop until `npm test` (on Node 22),
+`npm run typecheck` and `npm run build` pass, and the exam (`tests/robustness.test.ts`, `tests/fuzz/`) is locked
+to the commit it was armed at — commit exam changes before arming. `public/proxy.php` can't be tested in Node; keep
+its rules in step with `functions/proxy.php.ts` by hand.
+
 Transcription speed and word error rate are measured in the browser with `bench.html` (dev server only) on a
 recording from `scripts/make-bench-audio.sh` — see `docs/benchmark.md`, and add a row there when a change is
 meant to make things faster or more accurate. Keep the tab visible while it runs.
@@ -157,7 +166,8 @@ so all formats agree. JSON keeps numeric `speaker` per chunk plus a `speakers` i
 formats (`txt`, the default, and `md`) go through `toDocument()`; Copy uses `toTxt()`, one fragment per line
 (no longer a download format). Old saved settings: `doc` maps to `txt`, and a saved `lines` drops out. Documents: chunks merge into paragraphs per speaker
 turn, split at gaps ≥ `PARAGRAPH_PAUSE_SECONDS`; Markdown text is escaped (including list-like paragraph
-starts), the header date is local, and the title/timestamp option come from `downloadJob`. Several formats are saved as one store-only ZIP because browsers
+starts), the header date is local, and the title/timestamp option come from `downloadJob`. Subtitle cues drop
+blank lines (players end a cue there) and VTT escapes `& < >`, since its cue text is markup. Several formats are saved as one store-only ZIP because browsers
 silently block bursts of downloads.
 
 **Podcasts (`src/lib/podcasts.ts`).** iTunes Search API (CORS-enabled) to find shows; RSS and audio are
