@@ -30,5 +30,11 @@ export function runIsolated(moduleUrl: URL, name: string, args: unknown[], ms = 
       clearTimeout(timer);
       resolve({ error: String(e) });
     });
+    // A worker that dies silently (process.exit) is a crash, not a hang. After a
+    // message or a timeout this resolve is a no-op.
+    worker.once("exit", (code) => {
+      clearTimeout(timer);
+      resolve({ error: `worker exited with code ${code}` });
+    });
   });
 }

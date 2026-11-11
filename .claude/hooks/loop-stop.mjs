@@ -43,6 +43,8 @@ const block = (what, detail) => {
 try {
   execSync(`git diff --quiet ${state.base} -- ${EXAM.join(" ")}`, { stdio: "pipe" });
   execSync(`git diff --quiet --cached ${state.base} -- ${EXAM.join(" ")}`, { stdio: "pipe" });
+  // git diff skips untracked files, so a new file under tests/fuzz/ needs its own check.
+  if (execSync(`git ls-files --others --exclude-standard -- ${EXAM.join(" ")}`).toString().trim()) throw new Error("untracked");
 } catch {
   block("the exam check", `${EXAM.join(" and ")} differ from ${state.base}. Restore them with \`git checkout ${state.base} -- ${EXAM.join(" ")}\`.`);
 }
