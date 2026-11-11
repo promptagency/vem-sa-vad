@@ -184,9 +184,22 @@ for (const { name, result } of DAMAGED_RESULTS) {
     const saved = { id: "x", label: "L", source: "file", downloadName: "d", result, originalResult: null, speakerNames: {}, warning: null, savedAt: 0 };
     const job = jobFromSaved(saved as unknown as SavedTranscript);
     assert.ok(job.result, "restored job has a result");
+    for (const c of job.result.chunks) {
+      // The review view reads these directly (clock, audio.currentTime).
+      assert.ok(Number.isFinite(c.timestamp[0]), `start ${c.timestamp[0]}`);
+      assert.ok(c.timestamp[1] === null || Number.isFinite(c.timestamp[1]), `end ${c.timestamp[1]}`);
+    }
     for (const format of FORMATS) assertExport(job.result, format);
   });
 }
+
+test("restored transcript without its flat text rebuilds it from the lines", () => {
+  const result = { chunks: [{ text: " Hej", timestamp: [0, 1] }, { text: " då.", timestamp: [1, 2] }] };
+  const saved = { id: "x", label: "L", source: "file", downloadName: "d", result, originalResult: null, speakerNames: {}, warning: null, savedAt: 0 };
+  const job = jobFromSaved(saved as unknown as SavedTranscript);
+  assert.equal(job.result!.text, " Hej då.");
+  assert.equal(toTxt(job.result!), "Hej då.\n");
+});
 
 // ── 2. Speaker separation (diarize.ts) on random activity ──
 

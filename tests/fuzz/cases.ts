@@ -62,6 +62,9 @@ export const DAMAGED_RESULTS: { name: string; result: unknown }[] = [
   { name: "timestamp null", result: { text: "x", chunks: [{ text: "a", timestamp: null }] } },
   { name: "timestamp [null, null]", result: { text: "x", chunks: [{ text: "a", timestamp: [null, null] }] } },
   { name: "timestamp as strings", result: { text: "x", chunks: [{ text: "a", timestamp: ["1", "2"] }] } },
+  { name: "timestamp []", result: { text: "x", chunks: [{ text: "a", timestamp: [] }] } },
+  { name: "timestamp [\"abc\", 3]", result: { text: "x", chunks: [{ text: "a", timestamp: ["abc", 3] }] } },
+  { name: "timestamp [NaN, Infinity]", result: { text: "x", chunks: [{ text: "a", timestamp: [NaN, Infinity] }] } },
   { name: "null chunk", result: { text: "x", chunks: [null, { text: "b", timestamp: [1, 2] }] } },
   { name: "speaker as string", result: { text: "x", chunks: [{ text: "a", timestamp: [0, 1], speaker: "2" }] } },
 ];

@@ -129,17 +129,20 @@ export function jobProgress(job: Job): number {
  */
 function repairResult(raw: TranscriptResult): TranscriptResult {
   const r: Partial<TranscriptResult> = raw ?? {};
-  return {
-    ...r,
-    text: typeof r.text === "string" ? r.text : "",
-    chunks: (Array.isArray(r.chunks) ? r.chunks : [])
-      .filter((c) => c != null && typeof c === "object")
-      .map((c) => ({
+  const finite = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const chunks = (Array.isArray(r.chunks) ? r.chunks : [])
+    .filter((c) => c != null && typeof c === "object")
+    .map((c) => {
+      const [start, end] = Array.isArray(c.timestamp) ? c.timestamp : [];
+      return {
         ...c,
         text: typeof c.text === "string" ? c.text : "",
-        timestamp: Array.isArray(c.timestamp) ? c.timestamp : [0, null],
-      })),
-  };
+        timestamp: [finite(start) ?? 0, finite(end)] as [number, number | null],
+      };
+    });
+  // Without its flat text, rebuild it from the lines, as an edit does (App.tsx).
+  const text = typeof r.text === "string" ? r.text : chunks.map((c) => c.text).join("");
+  return { ...r, text, chunks };
 }
 
 /** A finished job rebuilt from storage. It has no media, so nothing can re-run it. */
