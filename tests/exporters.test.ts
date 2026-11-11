@@ -31,6 +31,12 @@ test("subtitles: timestamps, speaker names, and blank lines dropped", () => {
   assert.match(toVtt(result), /^WEBVTT\n\n00:00:00\.000 --> 00:00:01\.500\nSpeaker 1: Hej\.\n/);
 });
 
+test("a \"-->\" in the text can't pose as a timing line", () => {
+  const arrow = { text: "", chunks: [{ text: "A --> B\n00:00:05,000 --> 00:00:06,000", timestamp: [0, 1] as [number, number] }] };
+  assert.equal(toSrt(arrow), "1\n00:00:00,000 --> 00:00:01,000\nA -> B\n00:00:05,000 -> 00:00:06,000\n\n");
+  assert.match(toVtt(arrow), /\nA --&gt; B\n/);
+});
+
 test("labels come from the interface language the app passes in", () => {
   const sv = { speaker: (n: number) => `Talare ${n}`, speakers: "Talare", untitled: "Transkription" };
   assert.equal(toTxt(result, { 1: "Anna" }, sv), "Anna: Hej.\nTalare 2: Hallå.\nTalare 2: Ja.\n");
@@ -84,6 +90,12 @@ test("Markdown escapes every line of a paragraph, not just the first", () => {
   // No timestamped chunks: the whole text is one paragraph, which may have line breaks.
   const md = render({ text: "Intro\n---\nTitel\n===\n- punkt\n2. steg", chunks: [] }, "md", {}, { title: "T", timestamps: false, date: new Date(2026, 0, 2) });
   assert.equal(md.split("\n\n").slice(2).join(""), "Intro\n\\---\nTitel\n\\===\n\\- punkt\n2\\. steg\n");
+});
+
+test("Markdown escapes list markers indented up to three spaces, not code blocks", () => {
+  // Four spaces or a tab make a code block, where an inserted backslash would show.
+  const md = render({ text: "A\n - x\n   2. y\n    - kod\n\t1. kod", chunks: [] }, "md", {}, { title: "T", timestamps: false, date: new Date(2026, 0, 2) });
+  assert.equal(md.split("\n\n").slice(2).join(""), "A\n \\- x\n   2\\. y\n    - kod\n\t1. kod\n");
 });
 
 test("a silent recording gives subtitle files with no empty cue", () => {

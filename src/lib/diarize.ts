@@ -41,18 +41,24 @@ export function planWindows(
   windowSec = DIARIZE_WINDOW_SECONDS,
   overlapSec = DIARIZE_OVERLAP_SECONDS,
 ): DiarizationWindow[] {
+  // No real audio has these; an endless length would loop forever below.
+  if (!(durationSec >= 0) || durationSec === Infinity) return [];
   if (durationSec <= windowSec) {
     return [{ index: 0, startSec: 0, endSec: durationSec }];
   }
   const advance = Math.max(1, windowSec - overlapSec);
-  const windows: DiarizationWindow[] = [];
-  for (let start = 0; start < durationSec; start += advance) {
-    const endSec = Math.min(durationSec, start + windowSec);
-    windows.push({ index: windows.length, startSec: start, endSec });
-    if (endSec >= durationSec) break;
-  }
-  return windows;
+  // Counted up front: past 2^53 s, `start += advance` would stop moving.
+  const count = Math.ceil((durationSec - windowSec) / advance) + 1;
+  if (count > MAX_WINDOWS) throw new RangeError(`Recording too long to plan: ${durationSec} s`);
+  return Array.from({ length: count }, (_, index) => ({
+    index,
+    startSec: index * advance,
+    endSec: Math.min(durationSec, index * advance + windowSec),
+  }));
 }
+
+/** Far beyond any real recording (thousands of hours); only absurd lengths hit it. */
+const MAX_WINDOWS = 10_000;
 
 /** Total time both span lists are simultaneously active, within [from, to]. */
 function coincidentSeconds(

@@ -16,6 +16,11 @@ import type { SpeakerActivity, TranscriptChunk } from "../src/lib/protocol.ts";
 const line = (start: number, end: number | null, text = " ord"): TranscriptChunk => ({ text, timestamp: [start, end] });
 const speechIn = (spans: SpeakerActivity[]) => spans.reduce((n, s) => n + (s.end - s.start), 0);
 
+test("planWindows refuses absurd lengths at once instead of looping", () => {
+  assert.throws(() => planWindows(1e20), RangeError);
+  assert.equal(planWindows(240 * 60).length, 11);
+});
+
 test("planWindows covers the whole recording, overlapping by the set amount", () => {
   assert.deepEqual(planWindows(600), [{ index: 0, startSec: 0, endSec: 600 }]);
   assert.equal(planWindows(DIARIZE_WINDOW_SECONDS).length, 1);

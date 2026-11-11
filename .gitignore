@@ -24,3 +24,6 @@ vem-sa-vad-logotyp/
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Fix-loop state (.claude/hooks/loop.mjs)
+.claude/loop/
