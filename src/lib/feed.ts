@@ -3,10 +3,11 @@
 
 export function parseDuration(raw: string): number | null {
   if (!raw) return null;
-  if (/^\d+$/.test(raw)) return parseInt(raw, 10); // plain seconds
+  // Plain seconds, MM:SS or HH:MM:SS; a negative part or an endless total isn't a duration.
   const parts = raw.split(":").map((p) => parseInt(p, 10));
-  if (parts.some((n) => Number.isNaN(n))) return null;
-  return parts.reduce((acc, n) => acc * 60 + n, 0); // HH:MM:SS or MM:SS
+  if (parts.some((n) => Number.isNaN(n) || n < 0)) return null;
+  const total = parts.reduce((acc, n) => acc * 60 + n, 0);
+  return Number.isFinite(total) ? total : null;
 }
 
 /**

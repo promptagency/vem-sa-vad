@@ -41,6 +41,8 @@ export function planWindows(
   windowSec = DIARIZE_WINDOW_SECONDS,
   overlapSec = DIARIZE_OVERLAP_SECONDS,
 ): DiarizationWindow[] {
+  // No real audio has these; an endless length would loop forever below.
+  if (!(durationSec >= 0) || durationSec === Infinity) return [];
   if (durationSec <= windowSec) {
     return [{ index: 0, startSec: 0, endSec: durationSec }];
   }
